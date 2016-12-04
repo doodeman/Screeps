@@ -30,7 +30,7 @@ var depositShortRange = function(creep) {
             }
         }
     });
-    //console.log("deposit targets " + targets.length);
+    
     if(targets.length > 0) {
         var target = creep.pos.findClosestByRange(targets);
         
@@ -115,7 +115,7 @@ var roleMiner = {
                     creep.say(moveresult + " " + source.pos.x + " " + source.pos.y);
                     creep.memory.state = 'idle';
                 }
-                //console.log("4");
+                
                 return;
             } else {
                 return;
@@ -127,7 +127,7 @@ var roleMiner = {
         if(creep.memory.state === 'depositing') {
             if (_.sum(creep.carry) == 0) {
                 creep.memory.state = 'harvesting';
-                //console.log("miner going idle");
+                
                 return;
             }
             var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
@@ -146,10 +146,10 @@ var roleMiner = {
                     }
                 }
             }
-            //console.log("depositing miner");
-            //console.log("carry:" + creep.carry);
+            
+            
            
-            //console.log("10");
+            
             var targets = creep.room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     if (structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE) {
@@ -157,7 +157,7 @@ var roleMiner = {
                     }
                 }
             });
-            //console.log("deposit targets " + targets.length);
+            
             if(targets.length > 0) {
                 
                 var target = creep.pos.findClosestByRange(targets);

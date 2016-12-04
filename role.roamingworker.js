@@ -54,7 +54,7 @@ var roamingWorker = {
 	run: function(creep) {
 		shared.moveIntoRoom(creep);
     	var spawn = Game.spawns['Spawn1'];
-    	//console.log("roamingworker " + creep.memory.room + " spawnroom name " + spawn.room.name);
+    	
 		if (creep.carry[RESOURCE_ENERGY] == 0) {
 			var target = shared.getNonEmptyStorage(creep);
 			if (target != null) {
@@ -105,7 +105,7 @@ var roamingWorker = {
 				if (needrepairs.length > 0) {
 					var target = creep.pos.findClosestByRange(needrepairs);
 				}
-				//console.log(creep.room.name + " needrepairs " + needrepairs.length + " needbuilding " + needbuilding.length);
+				
 				if (target != null) {
 					creep.memory.targetid = target.id; 
 				} else {
@@ -124,7 +124,7 @@ var roamingWorker = {
 				    return;
 				}
 			}
-			//console.log("roaming target " + target);
+			
 			var workres = creep.build(target);
 			if (workres == ERR_INVALID_TARGET) {
 				workres = creep.repair(target);

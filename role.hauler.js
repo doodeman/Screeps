@@ -123,7 +123,6 @@ var load = function(creep) {
         var closestDrop = creep.pos.findClosestByRange(dropped);
         creep.moveTo(closestDrop);
         creep.pickup(closestDrop);
-        //console.log("hauler ret 1 room " + creep.room.name + " target room " + creep.memory.room);;
         return;
     }
     
@@ -134,30 +133,25 @@ var load = function(creep) {
     if (target == null) {
         creep.say('tnotfound');
         creep.memory.target = '';
-        //console.log("hauler ret 2 room " + creep.room.name + " target room " + creep.memory.room);;
         return;
     }
     creep.moveTo(target);
     var tranResult = target.transfer(creep, RESOURCE_ENERGY);
     if (tranResult === ERR_NOT_IN_RANGE) {
-        //console.log("hauler ret 3 room " + creep.room.name + " target room " + creep.memory.room);;
         return; 
     } else if (tranResult == ERR_NOT_ENOUGH_RESOURCES) {
-        //console.log("hauler ret 4 room " + creep.room.name + " target room " + creep.memory.room);;
         return;
     } else if (tranResult === ERR_FULL) {
         creep.memory.state = 'unload';
-        //console.log("hauler ret 5 room " + creep.room.name + " target room " + creep.memory.room);;
         return; 
     } else if (tranResult < 0) {
         creep.say('berr' + tranResult);
         creep.memory.state = 'load';
-        //console.log("hauler ret 6 room " + creep.room.name + " target room " + creep.memory.room);;
         return; 
     }
     if (creep.carry.energy === creep.carryCapacity) {
         creep.memory.state = 'unload'; 
-        //console.log("hauler ret 7 room " + creep.room.name + " target room " + creep.memory.room);;
+        
         return;
     }
 }

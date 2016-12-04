@@ -25,18 +25,18 @@ var getRoomTarget = function(creep) {
     for (var i = 0; i < ROOMS.length; i++) {
         if (typeof targets[ROOMS[i]] == 'undefined') {
             creep.memory.room = ROOMS[i]; 
-            //console.log("lrm returning2 " + ROOMS[i]);
+            
             return ROOMS[i];
         }
     }
     for (var i = 0; i < ROOMS.length; i++) {
         if (MAXROOMS[ROOMS[i]] > targets[ROOMS[i]]) {
             creep.memory.room = ROOMS[i]; 
-            //console.log("lrm returning " + ROOMS[i]);
+            
             return;
         }
     }
-    //console.log("lrm returning3 " + ROOMS[0]);
+    
     return ROOMS[0];
 }
 

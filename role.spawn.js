@@ -25,7 +25,10 @@ var BUILD_SPD = 5;
 var UPGD_SPD = 1;
 
 
-var LRMINEROOMS = ['W19N67', 'W17N66'];
+var LRMINEROOMS = {
+    'W18N67': ['W19N67', 'W17N66'],
+    'Spawn1': ['W18N66']
+}
 var ROLENAMES = ['hauler', 'miner', 'harvester', 'lrhauler', 'repairer'];
 var ROLES = {
     'hauler': {
@@ -34,13 +37,13 @@ var ROLES = {
                 filter: function(obj) { return obj.structureType == STRUCTURE_CONTAINER; }
             }).length;
         },
-        configuration: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE]
+        configuration: [CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
     },
     'miner': {
         max: function(spawn) {
-            return 3;
+            return spawn.room.find(FIND_SOURCES).length;
         },
-        configuration: [WORK,WORK, WORK, CARRY, MOVE, MOVE]
+        configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE]
     },
     'harvester': {
         max: function(spawn) {
@@ -54,17 +57,16 @@ var ROLES = {
     },
     'lrhauler': {
         max: function(spawn) {
-            return 2;
-            return LRMINEROOMS.length;
+            return LRMINEROOMS[spawn.name].length;
         },
         configuration: [CARRY,CARRY,MOVE, CARRY,CARRY,MOVE, CARRY,CARRY,MOVE, CARRY,CARRY,MOVE]
     },
     'repairer': {
         max: function(spawn) {
             return 1; 
-        }
-    },
-    configuration: [CARRY, MOVE, WORK, CARRY, MOVE, WORK]
+        },
+        configuration: [CARRY, MOVE, WORK, CARRY, MOVE, WORK]
+    }
 };
 
 var COSTS = {
@@ -132,7 +134,7 @@ var getCreepConfig = function(spawn, role) {
     while (getConfigCost(config) < Memory[spawn.id].energycap - partcost + 1) {
         config = config.concat(ROLES[role].configuration); 
     }
-    //console.log("config for " + role + " " + config + " cost " + getConfigCost(config) + " spawncap " + Memory[spawn.id].energycap);
+    
     return config; 
 }
 
@@ -148,7 +150,7 @@ var updateCreeps = function(spawn) {
     if (Memory[spawn.id] == null) {
         Memory[spawn.id] = {};
     }
-    if (Memory[spawn.id].maximums == null || Game.time % 100 == 0) {
+    if (Memory[spawn.id].maximums == null || Game.time % 51 == 0) {
         Memory[spawn.id].creeps = {};
         updateMaximums(spawn);
     }
@@ -158,10 +160,10 @@ var updateCreeps = function(spawn) {
     var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner' && creep.memory.spawn == spawn.name);
     var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler' && creep.memory.spawn == spawn.name); 
 
-    //console.log("Spawn " + spawn.name + " miners " + miners.length + " haulers " + haulers.length);
+    
 
     var canSpawn = (miners.length > 0) && (haulers.length > 0); 
-    //console.log("can spawn: " + canSpawn);
+    
     var statusstr = "Can spawn non-hauler&miner: " + canSpawn; 
     for (var i = 0; i < ROLENAMES.length; i++) {
         var rolename = ROLENAMES[i];
@@ -195,7 +197,7 @@ var updateCreeps = function(spawn) {
         }
     }
     */
-    //console.log(spawn.name + " " + statusstr);
+    
 }
 
 var roleSpawn = {
@@ -207,7 +209,7 @@ var roleSpawn = {
             updateSpawnCap(spawn);
             updateCreeps(spawn);
             var roomlevel = spawn.room.controller.level; 
-            //console.log("roomlevel: " + roomlevel);
+            
             //if (spawn.room.controller.)
         }
 		var hostiles = spawn.room.find(FIND_HOSTILE_CREEPS); 

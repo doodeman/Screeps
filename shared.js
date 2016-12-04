@@ -96,7 +96,7 @@
 	        //var moveres = creep.moveTo(exit, {ignoreRoads: true, reusePath: true});
 	        var moveres = shared.moveByPath(creep, exit);
 	        if (creep.memory.role == 'lrhauler') {
-	            //console.log(creep.name + " moveresult " + moveres + " room " + creep.room.name + " targetroom " + creep.memory.room);
+	            
 	        }
 	        return;
 	    }

@@ -121,7 +121,7 @@ profiler.enable();
 module.exports.loop = function () {
     //getPathToExit();
     profiler.wrap(function() {
-        //shared.getPath(11, 20, 0, 11, 'W18N67');
+        //shared.getPath(19, 31, 8, 48, 'W18N67');
         for(var name in Memory.creeps) {
             if(!Game.creeps[name]) {
                 if (Memory.creeps[name].totalenergydeposited != null) {
@@ -243,8 +243,6 @@ module.exports.loop = function () {
         if (spawn.spawning) {
             spawnname = spawn.spawning.name;
         }
-        //console.log("spawning: " + spawnname + " miners: " + miners.length + " repairers " + repairers.length + " haulers: " + haulers.length + " harvesters: " + harvesters.length + " lrms:" + lrm.length + " warriors:" + warriors.length + " healers: " + healers.length + " claimers: " + claimers.length + " lrhauler " + lrhaulers.length + " explorers " + explorers.length + " roamingworkers " + roamingworkers.length + " targetedbulders " + targetedbuilders.length + " link attendants " + linkattendants.length);
-        
         var lrhaulertargets = [];
         var oktouporbuild = ((miners.length >= MAX_MINERS && haulers.length >= MAX_HAULERS && warriors.length >= MAX_WARRIORS && lrm.length >= MAX_LRM));
         for(var name in Game.creeps) {

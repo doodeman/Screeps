@@ -48,7 +48,7 @@ var roleWarrior = {
     run: function(creep, go) {
         creep.memory.room = 'W18N66';
         var warriors = _.filter(Game.creeps, (creep) => (creep.memory.role == 'warrior' || creep.memory.role == 'healer') && creep.memory.underattack == true);
-        //console.log("warriorsunderattack: " + warriors.length + " priority: " + creep.memory.priorityRoom + " currentroom " + creep.room.name);
+        
         if (warriors.length) {
             creep.memory.priorityRoom = warriors[0].room.name;
         } else {

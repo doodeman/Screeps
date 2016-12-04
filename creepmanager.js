@@ -3,6 +3,7 @@ var creepManager = {
 		if (Game.time%10 == 0) {
 			this.reportCreeps();
 			this.reportCreepsBySpawn();
+			this.reportLRMiners();
 		}
 	},
 	reportCreeps: function() {
@@ -43,6 +44,36 @@ var creepManager = {
 			}
 			console.log(retstr);
 		}
+	},
+	reportLRMiners: function() {
+		var minertargets = {};
+		var haulertargets = {};
+		for (var name in Game.creeps) {
+			var creep = Game.creeps[name];
+			if (creep.memory.role == 'longrangeminer') {
+				if (minertargets[creep.memory.room] == null) {
+					minertargets[creep.memory.room] = 1; 
+				} else {
+					minertargets[creep.memory.room] += 1; 
+				}
+			}
+			if (creep.memory.role == 'lrhauler') {
+				if (haulertargets[creep.memory.room] == null) {
+					haulertargets[creep.memory.room] = 1; 
+				} else {
+					haulertargets[creep.memory.room] += 1; 
+				}
+			}
+		}
+		var report = "Miner targets: "; 
+		for (var t in minertargets) {
+			report += t + ": " + minertargets[t] + " ";
+		}
+		report += "\nHauler targets:"; 
+		for (var t in haulertargets) {
+			report += t + ": " + haulertargets[t] + " ";
+		}
+		console.log(report);
 	}
 }
 
