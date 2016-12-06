@@ -1,7 +1,7 @@
 var ROOMS = ['W18N66', 'W18N67', 'W19N67'];
 var ROOMSMAX = {
-    'W18N66': 2,
-    'W18N67': 0,
+    'W18N66': 1,
+    'W18N67': 1,
     'W19N67': 0
 };
 var rallyX = 27;
@@ -48,7 +48,7 @@ var roleHealer = {
         } else {
             creep.memory.underattack = false;
         }
-        var warriors = _.filter(Game.creeps, (creep) => (creep.memory.role == 'warrior' || creep.memory.role == 'healer') && creep.memory.underattack == true);
+        var warriors = _.filter(Game.creeps, (creep) => creep.memory.underattack == true);
         if (warriors.length) {
             creep.memory.priorityRoom = warriors[0].room.name;
         } else {
@@ -88,7 +88,7 @@ var roleHealer = {
                     shared.moveBetweenRooms(creep, creep.memory.priorityRoom);
                     return;
                 }
-                if (creep.room.name !== creep.memory.room) {
+                if ((creep.memory.priorityRoom == null || creep.memory.priorityRoom == '') && (creep.room.name !== creep.memory.room)) {
                     creep.say('notinarea');
                     shared.moveBetweenRooms(creep, creep.memory.room);
                     return;

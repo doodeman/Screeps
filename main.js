@@ -20,17 +20,17 @@ var economyMonitor = require('economymonitor');
 var roleTargetedBuilder = require('role.targetedbuilder');
 var roleSpawn = require('role.spawn');
 var creepManager = require('creepmanager');
-var MAX_HARVESTERS = 2;
+var MAX_HARVESTERS =3;
 var MAX_BUILDERS = 0; 
 var MAX_EXPLORERS = 2; 
 var MAX_MINERS = 2;
 var MAX_HAULERS = 3;
-var MAX_LRM = 4;
-var MAX_WARRIORS = 3;
+var MAX_LRM = 2;
+var MAX_WARRIORS = 2;
 var MAX_HEALERS = 2;
 var MAX_CLAIMERS = 1;
 var MAX_REPAIRERS = 1;
-var MAX_LRHAULERS = 2;
+var MAX_LRHAULERS = 3;
 var MAX_ROAMINGWORKERS = 1;
 var MAX_TARGETEDBUILDERS = 1;
 var CLAIMERROOMS = ['W18N67'];
@@ -121,7 +121,7 @@ profiler.enable();
 module.exports.loop = function () {
     //getPathToExit();
     profiler.wrap(function() {
-        //shared.getPath(19, 31, 8, 48, 'W18N67');
+        //shared.getPath(14, 38, 27, 48, 'W19N68');
         for(var name in Memory.creeps) {
             if(!Game.creeps[name]) {
                 if (Memory.creeps[name].totalenergydeposited != null) {
@@ -131,8 +131,8 @@ module.exports.loop = function () {
             }
         }
         var spawn = Game.spawns['Spawn1'];
-        var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler');
-        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner');
+        var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler'  && creep.memory.spawn != 'W18N67');
+        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner'  && creep.memory.spawn != 'W18N67');
         var minerconf = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE];
         if (miners.length < MAX_MINERS) {
             var newName = Game.spawns['Spawn1'].createCreep(minerconf, 'miner' + Math.floor((Math.random()*100000000) + 1), {role: 'miner', originalRole: 'miner', state: 'idle' });
@@ -151,7 +151,7 @@ module.exports.loop = function () {
         }
         
         
-        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
+        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer' && creep.memory.spawn != 'W18N67');
         var repairers = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer' && creep.memory.spawn != 'W18N67');
         var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester' && creep.memory.spawn != 'W18N67');
         var warriors = _.filter(Game.creeps, (creep) => creep.memory.role == 'warrior');
@@ -186,7 +186,7 @@ module.exports.loop = function () {
             var newName = Game.spawns['Spawn1'].createCreep(healerconf, 'healer' + Math.floor((Math.random()*100000) + 1), {role: 'healer', originalRole: 'healer', state: 'idle'});
         }
         if (warriors.length < MAX_WARRIORS && !spawned) {
-            var warriorconf = [TOUGH, RANGED_ATTACK, MOVE, MOVE, TOUGH, RANGED_ATTACK, MOVE, MOVE, TOUGH, RANGED_ATTACK, MOVE, MOVE];
+            var warriorconf = [TOUGH, ATTACK, MOVE, MOVE, TOUGH, ATTACK, MOVE, MOVE, TOUGH, ATTACK, MOVE, MOVE];
             var warriorconfweak = [ATTACK, MOVE];
             var newName = Game.spawns['Spawn1'].createCreep(warriorconf, 'warrior' + Math.floor((Math.random()*100000) + 1), {role: 'warrior', originalRole: 'warrior', state: 'idle'});
         }
@@ -289,6 +289,7 @@ module.exports.loop = function () {
         analyzer.run();
         economyMonitor.run();
         creepManager.run();
+        //economyMonitor.updateContainers();
     });
     
 }

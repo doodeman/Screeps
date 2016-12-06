@@ -15,23 +15,47 @@
             Game.rooms[room].createConstructionSite(path[i].x, path[i].y, STRUCTURE_ROAD);
         }
 	},
-
+	
+	findPath: function(creep,target) {
+	    console.log(creep.name + " finding path in " + creep.room.name);
+	    creep.say('pathfinding');
+	    PathFinder.use(false);
+    	var path = creep.pos.findPathTo(target, { avoid: this.getRoomEdge(creep.room.name), maxOps: 500 });
+    	//var path = creep.pos.findPathTo(target, {maxOps: 500 });
+    	PathFinder.use(true);
+        creep.memory.path = path;
+        
+        if (creep.memory._move != null && creep.memory._move.dest != null && creep.memory._move.room != creep.room.name) {
+            creep.memory_move = null;
+        }
+        return path;
+	},
+	
 	moveByPath: function(creep, target) {
-
 		if(!creep.memory.path || creep.memory.path.length == 0) {
-			PathFinder.use(false);
-	    	var path = creep.pos.findPathTo(target, { avoid: this.getRoomEdge(creep) });
-	    	PathFinder.use(true);
-	        creep.memory.path = path;
+			var path = shared.findPath(creep,target)
 	    }
 	    if (creep.memory.path.length == 0) {
 	    	this.moveIntoRoom(creep);
+	    	var path = shared.findPath(creep,target);
 	    	return;
 	    }
+	    if (creep.pos.getRangeTo(target) > 1) {
+	        creep.room.lookAt(creep.memory.path[0].x, creep.memory.path[0].y).forEach(function(lookObject) {
+    	        if (lookObject.type == LOOK_CREEPS) {
+    	            console.log(creep.name + " Here, generating new path");
+    	            var path = shared.findPath(creep, target);
+    	            return;
+    	        }
+    	    });
+	    }
+	     
 	    var moveres = creep.moveTo(creep.memory.path[0].x, creep.memory.path[0].y);
+	    //console.log(creep.name + " in room " + creep.room.name + " moving to " + creep.memory.path[0].x + " " + creep.memory.path[0].y + " path: " + shared.logPath(creep.memory.path) + " to target " + target);
 	    if (moveres == 0) {
 	        creep.memory.path.shift();
 	    } else {
+	        //console.log(creep.name + " in room " + creep.room.name + " moveres " + moveres + " moving to " + creep.memory.path[0].x + " " + creep.memory.path[0].y);
 	    }
 	    return moveres;
 	},
@@ -100,6 +124,170 @@
 	        }
 	        return;
 	    }
+	},
+
+	getMultiroomPathLength: function(x1, y1, room1, x2, y2, room2) {
+		if (room1 == room2) {
+			return shared.getPointToPointLength(x1, y2, x2, y2, room1);
+		}
+
+		var route = Game.map.findRoute(Game.rooms[room1], Game.rooms[room2]);
+		var routestr = "Route from " + room1 + " to " + room2 + "\n"; 
+		for (var i = 0; i < route.length; i++) {
+			routestr += "Room " + i + ": " + route[i].room + " exit: " + shared.exitNames[route[i].exit] + "\n";
+		}
+		var steps = [];
+		if (route.length > 1) {
+			steps.push({
+				entry: -1,
+				exit: route[0].exit, 
+				room: room1
+			});
+			for (var i = 0; i < route.length; i++) {
+				if (i > 0 && i != route.length-1) {
+					steps.push({
+						entry: shared.getOppositeExit(route[i-1].exit),
+						exit: route[i].exit, 
+						room: route[i].room
+					});
+				}
+				if (i == 0) {
+					if(route[i+1] == null) {
+						var rexit = -1; 
+					} else {
+						var rexit = route[i+1].exit;
+					}
+					steps.push({
+						entry: shared.getOppositeExit(steps[0].exit), 
+						exit: rexit, 
+						room: route[i].room
+					});
+				}
+				if (i == route.length - 1) {
+					steps.push({
+						entry: shared.getOppositeExit(route[i].exit), 
+						exit: -1, 
+						room: route[i].room
+					});
+				} 
+			}
+			shared.logMultiRoomPath(steps);
+			var length = 0;
+			var exitX = -1; 
+			var exitY = -1;
+			for (var i = 0; i < steps.length; i++) {
+				
+				var yChanged = false; 
+				if (exitY == 49) {
+					exitY = 0; 
+					yChanged = true; 
+				}  
+				if (exitY == 0 && !yChanged) {
+					exitY = 49; 
+				}
+				var xChanged = false; 
+				if (exitX == 49) {
+					exitX = 0; 
+					xChanged = true; 
+				}
+				if (exitX == 0 && !xChanged) {
+					exitX = 49;
+				}
+				if (i == 0) {
+					//Start position to first exit length
+					var obj = shared.getExitToPointLength(x1, y1, room1, steps[i].exit); 
+					length += obj.len;
+					exitX = obj.exitX; 
+					exitY = obj.exitY;
+					continue;
+				}
+				if (i == steps.length -1) {
+					//last exit to end position length
+					
+					length += shared.getPointToPointLength(exitX, exitY, x2, y2, steps[i].room);
+					continue; 
+				} 
+				//exit to exit length
+				var obj = shared.getExitToPointLength(exitX, exitY, steps[i].room, steps[i].exit);
+				length += obj.len;
+				exitX = obj.exitX; 
+				exitY = obj.exitY; 
+			}
+			return length; 
+		} else {
+			var obj1 = shared.getExitToPointLength(x1, y1, room1, route[0].exit);
+			var exitX = obj1.exitX; 
+			var exitY = obj1.exitY; 
+			var yChanged = false; 
+			if (exitY == 49) {
+				exitY = 0; 
+				yChanged = true; 
+			}  
+			if (exitY == 0 && !yChanged) {
+				exitY = 49; 
+			}
+			var xChanged = false; 
+			if (exitX == 49) {
+				exitX = 0; 
+				xChanged = true; 
+			}
+			if (exitX == 0 && !xChanged) {
+				exitX = 49;
+			}
+			var obj2 = shared.getPointToPointLength(x2, y2, exitX, exitY, room2);
+			return obj1.len + obj2;
+		} 
+	},
+
+	getPointToPointLength: function(x1, y1, x2, y2, room) {
+		//console.log("getPointToPointLength params: " + x1 + " " + y1 + " " + x2 + " " + y2 + " " + room);
+		var startpos = new RoomPosition(x1, y1, room); 
+		var endpos = new RoomPosition(x2, y2, room);
+		var len = startpos.findPathTo(endpos).length;
+		//console.log("getPointToPointLength returning " + len);
+		return len;
+	},	
+
+	getExitToPointLength: function(x, y, room, exit) {
+	    var pos = new RoomPosition(x, y, room);
+	    var newExit = pos.findClosestByRange(exit);
+	    var path = pos.findPathTo(newExit); 
+		var retobj = { len: path.length, exitX: path[path.length-1].x, exitY: path[path.length-1].y };
+		//console.log("retobj: " + retobj.len + " exitX: " + retobj.exitX + " exitY: " + retobj.exitY);
+		return retobj;
+	},
+
+	getExitToExitLength: function(entry, exit, room) {
+		return 1;
+		
+	},
+
+	logMultiRoomPath: function(path) {
+		var ret = "Route: "; 
+		for (var i = 0; i < path.length; i++) {
+			ret += "\nroom: " + path[i].room + " entry: " + shared.exitNames[path[i].entry] + " exit: " + shared.exitNames[path[i].exit]; 
+		}
+		console.log(ret);
+	},
+
+	getOppositeExit: function(exitName) {
+		switch (exitName) {
+			case FIND_EXIT_RIGHT: 
+				return FIND_EXIT_LEFT;
+			case FIND_EXIT_LEFT: 
+				return FIND_EXIT_RIGHT; 
+			case FIND_EXIT_BOTTOM: 
+				return FIND_EXIT_TOP; 
+			case FIND_EXIT_TOP: 
+				return FIND_EXIT_BOTTOM;
+		}
+	},
+
+	getPathLength: function(x1, y1, x2, y2, room) {
+		PathFinder.use(false);
+    	var path = new RoomPosition(x1, y1, room).findPathTo(new RoomPosition(x2, y2, room), { avoid: this.getRoomEdge(creep), maxOps: 500 });
+    	PathFinder.use(true);
+    	return path.length; 
 	},
 
 	moveRandomDir: function (creep) {
@@ -203,15 +391,35 @@
 		'ERR_TIRED': -11,
 		'ERR_NO_BODYPART': 12
 	},
-	getRoomEdge: function(creep) {
-		var avoid = []; 
-		for (var i = 0; i < 50; i++) {
-			avoid.push(new RoomPosition(i, 0, creep.room.name));
-			avoid.push(new RoomPosition(i, 49, creep.room.name));
-			avoid.push(new RoomPosition(0, i, creep.room.name));
-			avoid.push(new RoomPosition(49, i, creep.room.name));
-		}
-		return avoid;
+	exitNames: {
+		/*
+		 FIND_EXIT_TOP: 1,
+	    FIND_EXIT_RIGHT: 3,
+	    FIND_EXIT_BOTTOM: 5,
+	    FIND_EXIT_LEFT: 7,
+		*/
+		1: 'FIND_EXIT_TOP', 
+		3: 'FIND_EXIT_RIGHT', 
+		5: 'FIND_EXIT_BOTTOM',
+		7: 'FIND_EXIT_LEFT'
+	},
+	getRoomEdge: function(roomname) {
+	    if (Memory.roomEdges != null) {
+	        return Memory.roomEdges; 
+	    } else {
+    		var avoid = []; 
+    		for (var i = 0; i < 50; i++) {
+    			avoid.push(new RoomPosition(i, 0, roomname));
+    			avoid.push(new RoomPosition(i, 49, roomname));
+    			avoid.push(new RoomPosition(0, i, roomname));
+    			avoid.push(new RoomPosition(49, i, roomname));
+    		}
+    		Memory.roomEdges = avoid;
+    		for (var i = 0; i < avoid.length; i++) {
+    		    avoid[i].roomName = roomname;
+    		}
+	        return avoid; 
+	    }
 	}
 }
 

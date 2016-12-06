@@ -3,8 +3,8 @@ var analyzer = require('enemyAnalyzer');
 
 var ROOMS = ['W18N66', 'W18N67', 'W19N67'];
 var ROOMSMAX = {
-    'W18N66': 3,
-    'W18N67': 0,
+    'W18N66': 2,
+    'W18N67': 2,
     'W19N67': 0
 };
 var rallyX = 45;
@@ -16,7 +16,7 @@ var shared = require('shared');
 var findTargetRoom = function(creep) {
     var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'warrior');
     var targets = {};
-    console.log("warrior priority room " + creep.memory.priorityRoom + " warriors count " + haulers.length);
+    
     for (var i = 0; i < haulers.length; i++) {
         if (haulers[i].memory.room != null) {
             if (targets[haulers[i].memory.room] == null) {
@@ -32,27 +32,42 @@ var findTargetRoom = function(creep) {
             inroom = 0;
         }
         var roommax = ROOMSMAX[ROOMS[i]];
-        console.log("room " + ROOMS[i] + " inroom " + inroom + " roomax " + roommax);
+        
         if (inroom  < roommax) {
             creep.memory.room = ROOMS[i];
-            console.log("warrior room ret " + ROOMS[i]);
+            
             return;
         }
     }
-    console.log("warrior room default ret " +  ROOMS[1]);
+    
     creep.memory.room = ROOMS[1];
 }
 
 var FLAGNAME = 'Flag1';
 var roleWarrior = {
     run: function(creep, go) {
-        creep.memory.room = 'W18N66';
-        var warriors = _.filter(Game.creeps, (creep) => (creep.memory.role == 'warrior' || creep.memory.role == 'healer') && creep.memory.underattack == true);
-        
-        if (warriors.length) {
+        var warriors = _.filter(Game.creeps, (creep) => creep.memory.underattack == true);
+        if (warriors.length > 0) {
+            
             creep.memory.priorityRoom = warriors[0].room.name;
         } else {
-            creep.memory.priorityRoom = '';
+            
+            if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '') {
+                
+                var targets = Game.rooms[creep.memory.priorityRoom].find(FIND_HOSTILE_CREEPS, {
+                    filter: function(object) {
+                        return object.getActiveBodyparts(ATTACK) || object.getActiveBodyparts(RANGED_ATTACK) || object.getActiveBodyparts(HEAL) > 0;
+                    }
+                });
+                
+                if (targets != null && targets.length > 0) {
+
+                } else {
+                    
+                    creep.memory.priorityRoom = null;
+                }
+            }
+            
         }
         if (creep.memory.room == null || creep.memory.room == '') {
             findTargetRoom(creep);
@@ -82,6 +97,7 @@ var roleWarrior = {
         if (creep.memory.state == 'waiting') {
             if(creep.room.name !== spawn.room.name) {
                 shared.moveBetweenRooms(creep, spawn.room);
+                return;
             } else if (creep.ticksToLive < 500 && spawn.pos.findInRange(FIND_MY_CREEPS, 1, {filter: function(object) { return object.memory.role == 'warrior' || object.memory.role == 'healer'; }}).length < 4) {
                 creep.moveTo(spawn);
                 if (creep.pos.getRangeTo(spawn) < 2) {
@@ -110,47 +126,61 @@ var roleWarrior = {
                 });
                 if (targets.length == 0) {
                     creep.memory.underattack = false;
-                    if (creep.name == 'warrior1553') {
-                        //creep.memory.underattack = true;
-                    }
                     var targets = creep.room.find(FIND_HOSTILE_CREEPS);
+                    if (targets.length == 0) {
+                        var targets = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: function(obj)  { return obj.structureType != STRUCTURE_CONTROLLER; }});
+                    }
                 } else {
-                    console.log("warrior setting underattack to true in " + creep.room.name);
+                    
                     analyzer.request(creep.room.name);
                     creep.memory.underattack = true; 
                 }
+                if (targets.length == 0) {
+                    
+                } else {
+                    var target = creep.pos.findClosestByRange(targets);
+                    var attackresult = creep.attack(target);
+                    var attackresult = creep.rangedAttack(target);
+                    var targetX = target.pos.x; 
+                    var targetY = target.pos.y; 
+                    if (targetX == 49) targetX -= 1; 
+                    if (targetX == 0) targetX += 1; 
+                    if (targetY == 0) targetY += 1; 
+                    if (targetY == 49) targetY -= 1;
+                    
+                    shared.moveByPath(creep, new RoomPosition(targetX, targetY, target.room.name));
+                    return;
+                }
             }
             if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '' && creep.room.name != creep.memory.priorityRoom) {
-                console.log("Helping comrade!");
+                
                 shared.moveBetweenRooms(creep, creep.memory.priorityRoom);
+                
                 return;
             }
-            if (creep.room.name !== creep.memory.room) {
+            if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '' && creep.room.name != creep.memory.priorityRoom) {
+                shared.moveBetweenRooms(creep, creep.memory.priorityRoom);
+                
+                return;
+            } else if ((creep.memory.priorityRoom == null || creep.memory.priorityRoom == '') && (creep.room.name !== creep.memory.room)) {
                 creep.say('notinarea');
                 shared.moveBetweenRooms(creep, creep.memory.room);
+                
                 return;
             } else {
-                //creep.say('inarea');
-            }
-            if (targets.length == 0) {
                 var flags = creep.room.find(FIND_FLAGS);
                 if (flags.length) {
                     var flag = flags[0];
                     if (flag != null && flag.room.name == creep.room.name) {
-                        creep.moveTo(flag);
+                        shared.moveByPath(creep, flag);
+                        
                         return;
                     }
                 } else {
                     creep.moveTo(24,24);
-
                 }
-                
-            } else {
-                var target = creep.pos.findClosestByRange(targets);
-                var attackresult = creep.attack(target);
-                var attackresult = creep.rangedAttack(target);
-                creep.moveTo(target);
             }
+            
 	   }
     }
 }

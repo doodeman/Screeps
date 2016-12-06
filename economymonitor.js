@@ -6,13 +6,15 @@
  * var mod = require('economymonitor');
  * mod.thing == 'a thing'; // true
  */
-
+var shared = require('shared');
+var configs = require('configs');
 var ROOMS = ['W19N66', 'W18N66', 'W18N67'];
 var FREQ = 50;
 var economyMonitor = {
 	run: function() {
 		if (Game.time % FREQ == 0) {
 			this.analyze();
+			this.updateContainers(); 
 		}
 	}, 
 	analyze: function() {
@@ -84,6 +86,60 @@ var economyMonitor = {
 			str += "tick: " + problem.tick+ "\n\n";
 		}
 		return str;
+	},
+	registerContainer: function(containerid, spawn) {
+		if (Memory.lrcontainers == null) {
+			Memory.lrcontainers = {}; 
+		}
+		if (spawn == undefined) {
+			var spawn = Game.getObjectById('583d68476058ee051590a195');
+		} else {
+			var spawn = Game.spawns[spawn];
+		}
+		var obj = Game.getObjectById(containerid);
+		if (Memory.lrcontainers[containerid] == null) {
+			var distance = shared.getMultiroomPathLength(obj.pos.x, obj.pos.y, obj.room.name, spawn.pos.x, spawn.pos.y, spawn.room.name);
+			console.log("distance is " + distance);
+			Memory.lrcontainers[containerid] = {
+				spawn: spawn.name, 
+				room: obj.room.name, 
+				x: obj.pos.x, 
+				y: obj.pos.y,
+				distance: distance
+			};
+		}
+	},
+	updateContainers: function() {
+		for (var cname in Memory.lrcontainers) {
+			//console.log("cname " + cname);
+			var containerinfo = Memory.lrcontainers[cname]; 
+			var container = Game.getObjectById(cname);
+			//console.log("container : " +container);
+			if (container != null) {			
+				var lrhaulercarry = this.getConfigCarryCapacity(configs.lrhauler);
+				var roomclaimed = Game.rooms[container.room.name].controller.reservation != null; 
+				//console.log("roomclaimed " + roomclaimed + " lrhaulercarry " + lrhaulercarry + " container " + container);
+				if (roomclaimed) {
+					var sourcerate = 3000/300;
+				} else {
+					var sourcerate = 1500/300; 
+				}
+				//console.log("containerinfo.distance " + containerinfo.distance);
+				var haulrate = lrhaulercarry / (containerinfo.distance * 2);
+				var haulersneeded = Math.ceil(sourcerate/haulrate); 
+				console.log("container " + cname + " in " + container.room.name + " sourcerate " + sourcerate + " haulrate " + haulrate + " haulers needed " + haulersneeded);
+				Memory.lrcontainers[cname].haulersneeded = haulersneeded;
+			}
+		}
+	},
+	getConfigCarryCapacity: function(config) {
+		var ret = 0; 
+		for (var i = 0; i < config.length; i++) {
+			if (config[i] == CARRY) {
+				ret += 50; 
+			}
+		}
+		return ret;
 	}
 }
 

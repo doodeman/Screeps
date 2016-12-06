@@ -1,12 +1,14 @@
-var ROOMS = ['W18N66', 'W19N67', 'W17N66'];
+var ROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68'];
 
 var ROOMSMAX = {
-    'W18N66': 2,
+    'W18N66': 3,
     'W18N67': 0,
     'W17N66': 1,
-    'W19N67': 1
+    'W19N67': 1,
+    'W19N68': 1
 }
 var analyzer = require('enemyAnalyzer');
+var economymonitor = require('economymonitor');
 
 var shared = require('shared');
 
@@ -22,7 +24,7 @@ var findDepositTargetLongRange = function(creep) {
     if (targets.length == 0) {
         var targets = creep.room.find(FIND_STRUCTURES, {
            filter: function(structure) {
-               if (structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE && structure.store[RESOURCE_ENERGY] < structure.storeCapacity) {
+               if ((structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE) && structure.store[RESOURCE_ENERGY] < structure.storeCapacity) {
                     return true;
                }
            } 
@@ -52,10 +54,8 @@ var findTargetRoom = function(creep) {
     for (var i = 0; i < ROOMS.length; i++) {
         var targetingRoom = targets[ROOMS[i]];
         var roomMax = ROOMSMAX[ROOMS[i]];
-        console.log("!!!!!!lrhauler target Targeting " + ROOMS[i] + " " + targetingRoom + " max " + roomMax);
         if (targets[ROOMS[i]] == null || targets[ROOMS[i]] < ROOMSMAX[ROOMS[i]]) {
             creep.memory.room = ROOMS[i];
-            console.log("lrhauler returning " + ROOMS[i]);
             return;
         }
     }
@@ -82,7 +82,17 @@ var findLrHaulerTarget = function(creep) {
             return containers[i];
         }
     }
-    var min = _.min(Object.keys(targets), function (o) { return targets[o]; });
+    for (var i = 0; i < containers.length; i++) {
+        var containerid = containers[i].id; 
+        if(Memory.lrcontainers[containerid] != null) {
+            var containerinfo = Memory.lrcontainers[containerid];
+            if (targets[containerid] < containerinfo.haulersneeded) {
+                creep.memory.target = containerid; 
+                console.log("LRHAULER TARGET returning " + containerid + " on basis of haulerneed");
+                return;
+            }
+        }
+    }
     if (containers.length == 0) {
         var storage = creep.room.find(FIND_STRUCTURES, { filter: function(obj) { return obj.structureType == STRUCTURE_STORAGE; }});
         creep.memory.target =  storage[0].id;
@@ -92,10 +102,21 @@ var findLrHaulerTarget = function(creep) {
 }
 
 var roleLrhauler = {
+    configuration: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
     run: function(creep) {
+        var hostiles = creep.room.find(FIND_HOSTILE_CREEPS, {
+            filter: function(object) {
+                return object.getActiveBodyparts(ATTACK) > 0;
+            }
+        });
+        if (hostiles.length) {
+            console.log("miner setting underattack = true in " + creep.room.name);
+            analyzer.request(creep.room.name);
+            creep.memory.underattack = true;
+        } else {
+            creep.memory.underattack = false;
+        }
         if(creep.memory.room == null || creep.memory.room == '' || (creep.memory.room == creep.memory.spawn)) {
-            console.log("finding target room " + creep.name + " in room " + creep.room.name);
-            console.log("memory room " + creep.memory.room + " memory spawn " + creep.memory.spawn);
             findTargetRoom(creep);
         }
         var items = creep.room.lookAt(creep.pos.x, creep.pos.y);
@@ -126,12 +147,15 @@ var roleLrhauler = {
             }
             if (creep.room.name != creep.memory.room) {
                 shared.moveBetweenRooms(creep, creep.memory.room);
+                creep.say(1);
                 return;
             }
             var dropped = creep.room.find(FIND_DROPPED_RESOURCES);
             var closestDrop = creep.pos.findClosestByRange(dropped);
             if (creep.pos.getRangeTo(closestDrop) < 3) {
                 creep.pickup(closestDrop);
+                creep.moveTo(closestDrop);
+                creep.say(2);
                 return;
             }
             if (creep.memory.target == null || creep.memory.target == '') {
@@ -139,16 +163,19 @@ var roleLrhauler = {
             } else {
                 var target = Game.getObjectById(creep.memory.target);
             }
-            var moveres = creep.moveTo(target, {reusePath: true}); 
+            var moveres = shared.moveByPath(creep, target); 
             if (moveres < 0) {
                 creep.say(moveres);
             }
             if (target == null) {
                 creep.memory.state = 'idle';
                 creep.memory.target = '';
+                creep.say(3);
                 return;
             }
+            economymonitor.registerContainer(target.id, creep.memory.spawn);
             target.transfer(creep, RESOURCE_ENERGY);
+            creep.say(4);
             return;
         }
         if (creep.memory.state == 'returning') {

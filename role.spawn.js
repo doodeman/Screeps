@@ -26,10 +26,10 @@ var UPGD_SPD = 1;
 
 
 var LRMINEROOMS = {
-    'W18N67': ['W19N67', 'W17N66'],
+    'W18N67': ['W19N67', 'W17N66', 'W19N67'],
     'Spawn1': ['W18N66']
 }
-var ROLENAMES = ['hauler', 'miner', 'harvester', 'lrhauler', 'repairer'];
+var ROLENAMES = ['hauler', 'miner', 'harvester', 'lrhauler', 'repairer', 'warrior', 'longrangeminer'];
 var ROLES = {
     'hauler': {
         max: function(spawn) {
@@ -59,13 +59,25 @@ var ROLES = {
         max: function(spawn) {
             return LRMINEROOMS[spawn.name].length;
         },
-        configuration: [CARRY,CARRY,MOVE, CARRY,CARRY,MOVE, CARRY,CARRY,MOVE, CARRY,CARRY,MOVE]
+        configuration: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
     },
     'repairer': {
         max: function(spawn) {
             return 1; 
         },
         configuration: [CARRY, MOVE, WORK, CARRY, MOVE, WORK]
+    },
+    'warrior': {
+        max: function(spawn) {
+            return 1;
+        },
+        configuration: [TOUGH, ATTACK, MOVE, MOVE, ATTACK, ATTACK, MOVE, MOVE]
+    },
+    'longrangeminer': {
+        max: function(spawn) {
+            return 3;
+        },
+        configuration: [ WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE]
     }
 };
 
@@ -150,7 +162,7 @@ var updateCreeps = function(spawn) {
     if (Memory[spawn.id] == null) {
         Memory[spawn.id] = {};
     }
-    if (Memory[spawn.id].maximums == null || Game.time % 51 == 0) {
+    if (Memory[spawn.id].maximums == null || Game.time % 10 == 0) {
         Memory[spawn.id].creeps = {};
         updateMaximums(spawn);
     }
@@ -176,7 +188,7 @@ var updateCreeps = function(spawn) {
         if (creeps.length < Memory[spawn.id].maximums[rolename]) {
             var config = getCreepConfig(spawn, rolename);
             var canspawn = spawn.canCreateCreep(config);
-            
+            console.log("canspawn for " + rolename + " " + canspawn);
             if ((canspawn == 0 && canSpawn) || rolename == 'hauler' || rolename == 'miner') {
                 var newName = spawn.createCreep(config, rolename + Math.floor((Math.random()*100000) + 1), { role: rolename, originalRole: rolename, state: 'idle', room: spawn.room.name, spawn: spawn.name});
             }

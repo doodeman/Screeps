@@ -17,10 +17,6 @@ var roleHarvester = {
         } else {
             var spawn = Game.spawns['Spawn1'];
         }
-        //creep.memory.state = 'idle';
-        if (creep.ticksToLive < 1000 && creep.pos.getRangeTo(spawn) < 2 && spawn.energy > 100) {
-            return;
-        }
         if(creep.memory.state == 'idle') {
             creep.memory.state = 'filling';
             if (creep.energy == creep.carryCapacity) {

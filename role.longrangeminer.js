@@ -1,4 +1,4 @@
-var ROOMS = ['W18N66', 'W19N67', 'W17N66'];
+var ROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68'];
 
 var analyzer = require('enemyAnalyzer');
 
@@ -6,7 +6,8 @@ var MAXROOMS = {
     'W18N66': 2,
     'W18N67': 0,
     'W19N67': 1, 
-    'W17N66': 1
+    'W17N66': 1,
+    'W19N68': 1
 }
 var shared = require('shared');
 
@@ -57,6 +58,7 @@ var findTarget = function(creep) {
     }
     creep.memory.state = 'mining'; 
     creep.memory.target = sources[0].id;
+    console.log("returning source in room " + sources[0].room.name + " for creep with target room " + creep.memory.room);
     return sources[0];
 }
 
@@ -74,6 +76,9 @@ var longrangeminer = {
         } else {
             creep.memory.underattack = false;
         }
+        if (creep.memory.room == creep.memory.spawn) {
+            getRoomTarget(creep);
+        }
         if (creep.memory.room == null || creep.memory.room == '') {
             getRoomTarget(creep);
         }
@@ -89,8 +94,6 @@ var longrangeminer = {
         }
         if(creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
             creep.memory.state = 'returning';   
-        } else {
-            creep.memory.state = 'mining';
         }
         if (creep.memory.state == 'idle') {
             if (creep.carry[RESOURCE_ENERGY] > 0) {
@@ -100,6 +103,7 @@ var longrangeminer = {
             }
         }
         if (creep.memory.state == 'mining') {
+            
             var dropped = creep.room.find(FIND_DROPPED_RESOURCES);
             var closestDrop = creep.pos.findClosestByRange(dropped);
             if (creep.pos.getRangeTo(closestDrop) < 1) {
@@ -122,6 +126,11 @@ var longrangeminer = {
             } else {
                 var target = Game.getObjectById(creep.memory.target);
             }
+            if (target.room.name != creep.memory.room) {
+                console.log("LRHAULER TARGET NOT IN ROOM, CLEARING");
+                target = findTarget(creep);
+                return;
+            }
             if (target == null || target == -1) {
                 creep.memory.target = '';
                 return;
@@ -129,7 +138,7 @@ var longrangeminer = {
             if (creep.memory.room != creep.memory.room) {
                 creep.memory.target = '';
                 if (creep.room.name == creep.memory.room) {
-                    creep.moveTo(20,20);
+                    shared.moveByPath(creep, new RoomPosition(20,20, creep.room.name));
                     return;
                 }
             }
@@ -146,8 +155,7 @@ var longrangeminer = {
                 return;
             }
             else if(harvestResult !== 0) {
-                var moveresult = creep.moveTo(target);
-                creep.say(moveresult);
+                var moveresult = shared.moveByPath(creep, target);
                 if (moveresult === -7) {
                 }
                 if (moveresult !== 0 && moveresult !== -11) {
@@ -156,7 +164,7 @@ var longrangeminer = {
                     creep.memory.target = '';
                     creep.memory.room = ''; 
                     findTarget(creep);
-                    creep.moveTo(20,20);
+                    shared.moveByPath(creep, new RoomPosition(20,20, creep.room.name));
                     return;
                 }
                 return;
@@ -180,7 +188,7 @@ var longrangeminer = {
                 if (target.pos.getRangeTo(creep.pos) < 5) {
                     var buildres = creep.build(target); 
                     if (buildres == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(target);
+                        shared.moveByPath(creep, target);
                         return;
                     } else if (buildres === 0) {
                         return;
@@ -194,13 +202,13 @@ var longrangeminer = {
                 var target = creep.pos.findClosestByRange(targets);
                 if (target.hits < target.hitsMax) {
                     if (creep.repair(target) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(target);
+                        shared.moveByPath(creep, target);
                     }
                     return;
                 }
                 var transferResult = creep.transfer(target, RESOURCE_ENERGY);
                 if(transferResult === -9) {
-                    creep.moveTo(target);
+                    shared.moveByPath(creep, target);
                     return;
                 }
                 if(transferResult === 0) {
@@ -211,7 +219,7 @@ var longrangeminer = {
                     var target = creep.pos.findClosestByRange(targets);
                     if (target.hits < target.hitsMax) {
                         if (creep.repair(target) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(target);
+                            shared.moveByPath(creep, target);
                         }
                     }
                     return;

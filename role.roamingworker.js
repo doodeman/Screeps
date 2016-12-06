@@ -1,4 +1,4 @@
-var ROOMS = ['W18N66', 'W19N67', 'W17N66'];
+var ROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68'];
 var shared = require('shared');
 
 var findRoom = function(creep) {
