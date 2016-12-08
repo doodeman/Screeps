@@ -46,14 +46,22 @@ var findTargetRoom = function(creep) {
 var FLAGNAME = 'Flag1';
 var roleWarrior = {
     run: function(creep, go) {
+        var spawn = Game.spawns[creep.memory.spawn]; 
+        if (creep.memory.room == spawn.room.name) {
+            creep.memory.room = '';
+        }
         var warriors = _.filter(Game.creeps, (creep) => creep.memory.underattack == true);
         if (warriors.length > 0) {
             
             creep.memory.priorityRoom = warriors[0].room.name;
         } else {
             
-            if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '') {
-                
+            if (go && creep.memory.priorityRoom != null && creep.memory.priorityRoom != '') {
+                console.log("priorityroom " + creep.memory.priorityRoom);
+                if (Game.rooms[creep.memory.priorityRoom] == null) {
+                    shared.moveBetweenRooms(creep, creep.memory.priorityRoom);
+                    return;
+                }
                 var targets = Game.rooms[creep.memory.priorityRoom].find(FIND_HOSTILE_CREEPS, {
                     filter: function(object) {
                         return object.getActiveBodyparts(ATTACK) || object.getActiveBodyparts(RANGED_ATTACK) || object.getActiveBodyparts(HEAL) > 0;
@@ -115,7 +123,7 @@ var roleWarrior = {
             
             
             
-            var targets = creep.room.find(FIND_STRUCTURES, {
+            var targets = creep.room.find(FIND_HOSTILE_STRUCTURES, {
                 filter: {structureType: STRUCTURE_TOWER}
             });
             if (targets.length == 0) {
@@ -135,22 +143,22 @@ var roleWarrior = {
                     analyzer.request(creep.room.name);
                     creep.memory.underattack = true; 
                 }
-                if (targets.length == 0) {
-                    
-                } else {
-                    var target = creep.pos.findClosestByRange(targets);
-                    var attackresult = creep.attack(target);
-                    var attackresult = creep.rangedAttack(target);
-                    var targetX = target.pos.x; 
-                    var targetY = target.pos.y; 
-                    if (targetX == 49) targetX -= 1; 
-                    if (targetX == 0) targetX += 1; 
-                    if (targetY == 0) targetY += 1; 
-                    if (targetY == 49) targetY -= 1;
-                    
-                    shared.moveByPath(creep, new RoomPosition(targetX, targetY, target.room.name));
-                    return;
-                }
+                
+            }
+            if (targets.length > 0) {
+                var target = new RoomPosition(18, 9, creep.room.name).findClosestByRange(targets);
+                var attackresult = creep.attack(target);
+                var attackresult = creep.rangedAttack(target);
+                var targetX = target.pos.x; 
+                var targetY = target.pos.y; 
+                if (targetX == 49) targetX -= 1; 
+                if (targetX == 0) targetX += 1; 
+                if (targetY == 0) targetY += 1; 
+                if (targetY == 49) targetY -= 1;
+                
+                var targetPos = new RoomPosition(targetX, targetY, target.room.name);
+                shared.moveByPath(creep, targetPos);
+                return;
             }
             if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '' && creep.room.name != creep.memory.priorityRoom) {
                 
@@ -171,10 +179,12 @@ var roleWarrior = {
                 var flags = creep.room.find(FIND_FLAGS);
                 if (flags.length) {
                     var flag = flags[0];
-                    if (flag != null && flag.room.name == creep.room.name) {
-                        shared.moveByPath(creep, flag);
-                        
-                        return;
+                    if (creep.pos.getRangeTo(flag) > 5) {
+                        if (flag != null && flag.room.name == creep.room.name) {
+                            shared.moveByPath(creep, flag);
+                            
+                            return;
+                        }
                     }
                 } else {
                     creep.moveTo(24,24);

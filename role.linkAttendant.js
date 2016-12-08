@@ -10,13 +10,23 @@
 
 var roleLinkAttendant = {
 	run: function(creep) {
-		var x = 23;
-		var y = 16;
+		if(creep.room.name == 'W19N66') {
+			var x = 23;
+			var y = 16;
+		} else {
+			var x = 11;
+			var y = 19; 
+		}
 		if (creep.pos.x != x || creep.pos.y != y) {
 			var moveres = creep.moveTo(x, y); 
 		}
-		var linkid = '583d62762a4dc22a576046ce';
-		var storageid = '5837a270bff25a055c77dc84';
+		if (creep.room.name == 'W19N66') {
+			var linkid = '583d62762a4dc22a576046ce';
+			var storageid = '5837a270bff25a055c77dc84';
+		} else {
+			var linkid = '5847d9f80a4d3d50492ef25c';
+			var storageid = '58413e90a2a6ec7855ac86b8';
+		}
 		var link = Game.getObjectById(linkid); 
 		var storage = Game.getObjectById(storageid);
 		if (link != null) {

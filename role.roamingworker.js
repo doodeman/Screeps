@@ -1,4 +1,4 @@
-var ROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68'];
+var ROOMS = ['W18N66', 'W17N66', 'W19N68', 'W17N67', 'W18N65'];
 var shared = require('shared');
 
 var findRoom = function(creep) {
@@ -53,8 +53,10 @@ var moveToAndTransfer = function(creep, target){
 var roamingWorker = {
 	run: function(creep) {
 		shared.moveIntoRoom(creep);
+		if(creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
+			creep.memory.room = '';
+		}
     	var spawn = Game.spawns['Spawn1'];
-    	
 		if (creep.carry[RESOURCE_ENERGY] == 0) {
 			var target = shared.getNonEmptyStorage(creep);
 			if (target != null) {

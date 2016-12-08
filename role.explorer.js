@@ -1,4 +1,4 @@
-var ROOMS = ['W17N66', 'W18N67'];
+var ROOMS = ['W17N66'];
 var moveBetweenRooms = function(creep, destination) {
     if (creep.pos.x == 0) {
         creep.move(RIGHT);
@@ -49,7 +49,7 @@ var explorer = {
     states: moving, idle, surveying
     */
     run: function(creep) {
-        creep.memory.room = 'W18N66';
+        creep.memory.room = 'W17N66';
         if (creep.memory.room == null || creep.memory.room == '') {
             getTarget(creep);
         }

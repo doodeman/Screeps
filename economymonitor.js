@@ -9,12 +9,14 @@
 var shared = require('shared');
 var configs = require('configs');
 var ROOMS = ['W19N66', 'W18N66', 'W18N67'];
+var LRHAULERROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68', 'W17N67'];
 var FREQ = 50;
 var economyMonitor = {
 	run: function() {
 		if (Game.time % FREQ == 0) {
 			this.analyze();
 			this.updateContainers(); 
+			this.updateLrHaulerNeed();
 		}
 	}, 
 	analyze: function() {
@@ -126,7 +128,7 @@ var economyMonitor = {
 				}
 				//console.log("containerinfo.distance " + containerinfo.distance);
 				var haulrate = lrhaulercarry / (containerinfo.distance * 2);
-				var haulersneeded = Math.ceil(sourcerate/haulrate); 
+				var haulersneeded = Math.ceil(haulrate/sourcerate); 
 				console.log("container " + cname + " in " + container.room.name + " sourcerate " + sourcerate + " haulrate " + haulrate + " haulers needed " + haulersneeded);
 				Memory.lrcontainers[cname].haulersneeded = haulersneeded;
 			}
@@ -140,7 +142,26 @@ var economyMonitor = {
 			}
 		}
 		return ret;
+	},
+	getLrHaulerNeedForRoom: function(room) {
+		//console.log("returning need for room " + room);
+		return Memory.lrhaulerneed[room];
+	},
+	updateLrHaulerNeed: function() {
+		if (Memory.lrhaulerneed == null) {
+			Memory.lrhaulerneed = {};
+		}
+		for (var room in LRHAULERROOMS) {
+			var roomname = LRHAULERROOMS[room];
+			//Memory.lrhaulerneed[roomname] = this.getLrHaulerNeedForRoom(roomname); 
+			if (roomname == 'W17N67' || roomname == 'W18N66') {
+				Memory.lrhaulerneed[roomname] = 2;
+				return;
+			}
+			Memory.lrhaulerneed[roomname] = 1; //fix this
+		}
 	}
+
 }
 
 module.exports = economyMonitor;

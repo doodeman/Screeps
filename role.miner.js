@@ -23,14 +23,7 @@ var findTarget = function(creep) {
 }
 
 var depositShortRange = function(creep) {
-    var targets = creep.room.find(FIND_STRUCTURES, {
-        filter: (structure) => {
-            if (structure.structureType == STRUCTURE_CONTAINER) {
-                return true;  
-            }
-        }
-    });
-    
+    var targets = shared.getContainersInRoom(creep.room.name); 
     if(targets.length > 0) {
         var target = creep.pos.findClosestByRange(targets);
         
@@ -133,7 +126,7 @@ var roleMiner = {
             var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
             if (sites.length > 0) {
                 var target = creep.pos.findClosestByRange(sites);
-                if (target.pos.getRangeTo(creep.pos) < 5) {
+                if (target.pos.getRangeTo(creep.pos) < 2) {
                     var buildres = creep.build(target); 
                     if (buildres == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target);
@@ -150,14 +143,7 @@ var roleMiner = {
             
            
             
-            var targets = creep.room.find(FIND_STRUCTURES, {
-                filter: (structure) => {
-                    if (structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE) {
-                        return true;  
-                    }
-                }
-            });
-            
+            var targets = shared.getContainersInRoom(creep.room.name); 
             if(targets.length > 0) {
                 
                 var target = creep.pos.findClosestByRange(targets);

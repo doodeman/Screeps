@@ -1,10 +1,10 @@
 
 var shared = require('shared');
-ROOM = 'W18N67';
+ROOM = 'W19N66';
 var roleTargetedBuilder = {
 	run: function(creep) {
+		//creep.say('TARGETEDBUILDER');
     	var spawn = Game.spawns['Spawn1'];
-    	
 		if (creep.carry[RESOURCE_ENERGY] == 0) {
 			var refill = shared.getNonEmptyStorage(creep);
 			if (refill != null) {
@@ -61,6 +61,52 @@ var roleTargetedBuilder = {
                 }
                 return;
                 */
+                var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+	            if (sites.length > 0) {
+	            	var target = creep.pos.findClosestByRange(sites);
+	            	var buildres = creep.build(target); 
+		            if (buildres == ERR_NOT_IN_RANGE) {
+		                creep.moveTo(target);
+		                return;
+		            } else if (buildres === 0) {
+		                return;
+		            } else {
+		                creep.say('buerr' + buildres);
+		                return;
+		            }
+	            }
+
+	            var targets = shared.getObjInRoomCriteria(creep.room.name, 'structures', function(structure) { return true; });
+	            
+                var targets = _.filter(targets, 
+                	(structure) => (
+                		((structure.structureType == STRUCTURE_WALL) || (structure.structureType == STRUCTURE_RAMPART))
+				        && (structure.hits < 300000)));
+               	console.log("targets len " + targets.length);
+
+                if (targets.length > 0) {
+                	var target = creep.pos.findClosestByRange(targets);
+                } else {
+                	creep.say('No target');
+                	return;
+                }
+                var result = creep.repair(target);
+                console.log(target + " " + targets.length);
+                if (result == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
+                    return; 
+                } else if (result == 0) {
+                    return;
+                } else if (result == ERR_NOT_ENOUGH_RESOURCES) {
+                    creep.memory.state = 'filling';
+                    return;
+                } else if (result < 0) {
+                    creep.say(result);
+                    creep.memory.state = 'filling';
+                    return;
+                } 
+
+                /*
 		        var target = creep.pos.findClosestByRange(creep.room.find(FIND_STRUCTURES, {
 		            filter: function(structure) {
 		                if(((structure.structureType === STRUCTURE_EXTENSION) || (structure.structureType === STRUCTURE_SPAWN)) && structure.energyCapacity > structure.energy) {
@@ -69,7 +115,6 @@ var roleTargetedBuilder = {
 		            }
 		        }));
 		        if (target == null) {
-		            var moveres = shared.moveByPath(creep, creep.room.controller);
 				    
 				    if (moveres == ERR_NO_PATH) {
 				    	creep.path = null; 
@@ -78,10 +123,13 @@ var roleTargetedBuilder = {
 						
 				    }
                     if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+		            	var moveres = shared.moveByPath(creep, creep.room.controller);
                     }
                     return;
 		        }
-		        var moveres = shared.moveByPath(creep, target); 
+		        */
+		        //var moveres = shared.moveByPath(creep, target); 
+		        var moveres = creep.moveTo(target, { reusePath: true });
 		        creep.transfer(target, RESOURCE_ENERGY);
 		    }
 			

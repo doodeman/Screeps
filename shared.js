@@ -1,14 +1,56 @@
-/*
- * Module code goes here. Use 'module.exports' to export things:
- * module.exports.thing = 'a thing';
- *
- * You can import it from another modules like this:
- * var mod = require('shared');
- * mod.thing == 'a thing'; // true
- */
+var AVOID = ['W20N68']
 
  var shared = {
 
+ 	getObjInRoomCriteria(room, name, filterfunc) {
+ 		if (Memory.objCache == null) {
+ 			Memory.objCache = {};
+ 		}
+ 		var updated = false; 
+ 		if (Memory.objCache[name] == null || Memory.objCache[name][name] == null) {
+			Memory.objCache[name] = {}; 
+			Memory.objCache[name][name] = {}; 
+			Memory.objCache[name].lastUpdated = Game.time; 
+			updated = true; 
+		}
+		var sinceLast = Game.time - Memory.objCache[name].lastUpdated;
+		if (sinceLast > 300) {
+			Memory.objCache[name] = {}; 
+			Memory.objCache[name][name] = {}; 
+			Memory.objCache[name].lastUpdated = Game.time; 
+			updated = true; 
+		}
+		if (Memory.objCache[name][name][room] == null 
+			|| Object.keys(Memory.objCache[name][name][room]).length == 0) {
+			this.updateObjectInRoomCriteria(room, name, filterfunc);
+			updated = true; 
+		}
+		var objects = []; 
+		for (var i = 0; i < Memory.objCache[name][name][room].length; i++) {
+			var object = Game.getObjectById(Memory.objCache[name][name][room][i]);
+			if (object != null) {
+				objects.push(object); 
+			}
+		}
+		return objects;
+ 	},
+
+ 	updateObjectInRoomCriteria(room, name, filterfunc) {
+		var targets = Game.rooms[room].find(FIND_STRUCTURES, {
+	        filter: filterfunc
+	    });
+	    if (Memory.objCache[name][name][room] == null) {
+	    	Memory.objCache[name][name][room] = [];
+	    }
+	    for (var i = 0; i < targets.length; i++) {
+	    	var target = targets[i]; 
+	    	Memory.objCache[name][name][room].push(target.id);  
+	    } 	
+ 	},
+
+ 	getContainersInRoom(room) {
+ 		return shared.getObjInRoomCriteria(room, "container", function(structure) { return structure.structureType == STRUCTURE_CONTAINER; })
+ 	},
  	getPath: function(x1, y1, x2, y2, room) {
         var path = new RoomPosition(x1, y1, room).findPathTo(new RoomPosition(x2, y2, room), {ignoreRoads: true});
         for (var i = 0; i < path.length; i++) {
@@ -17,7 +59,8 @@
 	},
 	
 	findPath: function(creep,target) {
-	    console.log(creep.name + " finding path in " + creep.room.name);
+		//console.log(creep.name + " in " + creep.room.name + " pathfinding");
+	    //console.log(creep.name + " finding path in " + creep.room.name);
 	    creep.say('pathfinding');
 	    PathFinder.use(false);
     	var path = creep.pos.findPathTo(target, { avoid: this.getRoomEdge(creep.room.name), maxOps: 500 });
@@ -108,7 +151,13 @@
 	        creep.memory._move = null;
 	        return;
 	    }
-	    var route = Game.map.findRoute(creep.room, destination);
+	    var route = Game.map.findRoute(creep.room, destination, {
+	    	routeCallback(roomName, fromRoomName) {
+	    		if (AVOID.indexOf(roomName) != -1) {
+	    			return Infinity; 
+	    		}
+	    	}
+	    });
 	    creep.say(destination);
 	    
 	    if(route.length > 0) {

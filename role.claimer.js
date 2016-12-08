@@ -54,49 +54,15 @@ var roleClaimer = {
             return;
         }
     }, 
-    spawnClaimer: function(max_claimers) {
-        
-        var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer');
-        var emptyroom = false;
-        var roomtargeters = {};
-        for (var i = 0; i < ROOMS.length; i++) {
-            var targeting = 0; 
-            if (roomtargeters[ROOMS[i]] == null) {
-                roomtargeters[ROOMS[i]] = 0;
-            }
-            for (var n = 0; n < claimers.length; n++) {
-                if (claimers[i] != null && claimers[i].memory.room == ROOMS[i]) {
-                    targeting += 1; 
-                }
-            }
-            roomtargeters[ROOMS[i]] = targeting; 
-            if (targeting  == 0) {
-                emptyroom = true; 
-                break;
-            } 
-        }
-        if (claimers.length >= max_claimers*2) {
-            return false; 
-        }
-        if (emptyroom) {
-            return true;
-        }
-        var dying = 0;
-        for(var name in Game.creeps) {
-            var creep = Game.creeps[name];
-            if (creep.memory.role == 'claimer' && roomtargeters[creep.room.name] < 2) {
-                if (creep.ticksToLive < 250) {
-                    dying += 1;
-                }
+    claimerNeeded: function(rooms) {
+        for (var i = 0; i < rooms.length; i++) {
+            var room = Game.rooms[rooms[i]]; 
+            var healthyClaimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
+            if (healthyClaimers.length == 0) {
+                return room.name; 
             }
         }
-        if (dying > 0) {
-            return true;
-        }
-        return false;
-    },
-    spawnClaimerNew: function(max_claimers) {
-        var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer');
+        return null; 
     }
 }
 

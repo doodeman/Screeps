@@ -54,7 +54,10 @@ var roleHealer = {
         } else {
             creep.memory.priorityRoom = '';
         }
-        var spawn = Game.spawns['Spawn1'];
+        var spawn = Game.spawns[creep.memory.spawn]; 
+        if (creep.memory.room == spawn.room.name) {
+            creep.memory.room = '';
+        }
         if(creep.memory.room == null || creep.memory.room == '') {
             findTargetRoom(creep);
         }

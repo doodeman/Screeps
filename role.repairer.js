@@ -101,22 +101,37 @@ var roleRepairer = {
                 return;
             }
             if (creep.memory.target == null || creep.memory.target == '') {
-                var targets = creep.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return ((structure.hitsMax - structure.hits) > 500) && structure.structureType == STRUCTURE_CONTAINER;
-                    }
-                });
+                var targets = shared.getContainersInRoom(creep.room.name); 
+                var targets = _.filter(targets, (structure) => (structure.hitsMax - structure.hits) > 500);
                 if (targets.length > 0) {
                     var target = creep.pos.findClosestByRange(targets);
                     creep.memory.target = target.id; 
                     return; 
                 }
-                var targets = creep.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return (structure.hitsMax - structure.hits) > 100;    
-                    }
-                });
+                var targets = shared.getObjInRoomCriteria(creep.room.name, 'structures', function(obj) { return true; })
+                var targets = _.filter(targets, 
+                    (structure) => 
+                        (
+                            (structure.structureType != STRUCTURE_WALL) 
+                            && (structure.hitsMax - structure.hits) > 100
+                            && (structure.structureType != STRUCTURE_RAMPART)
+                        )
+                    );
+                //console.log("FOUND " + targets.length + " WITH CRITERIA QUERY");
                 if (targets.length == 0) {
+                    var flags = creep.room.find(FIND_FLAGS);
+                    if (flags.length) {
+                        var flag = flags[0];
+                        if (creep.pos.getRangeTo(flag) > 5) {
+                            if (flag != null && flag.room.name == creep.room.name) {
+                                shared.moveByPath(creep, flag);
+                                
+                                return;
+                            }
+                        }
+                    } else {
+                        creep.moveTo(24,24);
+                    }
                     return;
                 }
                 var target = creep.pos.findClosestByRange(targets);
@@ -138,7 +153,6 @@ var roleRepairer = {
                     creep.memory.state = 'filling';
                     return;
                 } else if (result < 0) {
-                    creep.say(result);
                     creep.memory.state = 'filling';
                     return;
                 }

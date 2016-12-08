@@ -74,6 +74,55 @@ var creepManager = {
 			report += t + ": " + haulertargets[t] + " ";
 		}
 		console.log(report);
+	},
+	creepRoles: {
+	    'lrhauler': {
+	        max: function() {
+	        	return 8;
+	            var totalneed = 0; 
+	            for (var room in LRMINEROOMS[spawn.name]) {
+	                totalneed += economyMonitor.getLrHaulerNeedForRoom(LRMINEROOMS[spawn.name][room]);
+	            }
+	            return totalneed;
+	        },
+	        configuration: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
+	    },
+	    'healer': {
+	    	max:function() {
+	    		return 1; 
+	    	},
+	    	configuration: [HEAL, MOVE, HEAL, MOVE, HEAL, MOVE]
+	    },
+	    'warrior': {
+	        max: function() {
+	            return 1;
+	        },
+	        configuration: [TOUGH, ATTACK, MOVE, TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE]
+	    },
+	    'longrangeminer': {
+	        max: function() {
+	            return 8;
+	        },
+	        configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
+	    },
+	    'roamingworker': {
+	    	max: function() {
+	    		return 1; 
+	    	}, 
+	    	configuration: [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
+	    },
+	    'targetedbuilder': {
+	    	max: function() {
+	    		return 1; 
+	    	}, 
+	    	configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE]
+	    },
+	    'explorer': {
+	    	max: function() {
+	    		return 2; 
+	    	}, 
+	    	configuration: [ATTACK, ATTACK, MOVE, MOVE]
+	    }
 	}
 }
 

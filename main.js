@@ -9,9 +9,9 @@ var roleWarrior = require('role.warrior');
 var roleExtensionManager = require('role.extensionManager');
 var roleRepairer = require('role.repairer');
 var roleLongrangeminer = require('role.longrangeminer');
+var roleLrhauler = require('role.lrhauler');
 var roleHealer = require('role.healer');
 var roleClaimer = require('role.claimer');
-var roleLrhauler = require('role.lrhauler');
 var analyzer = require('enemyAnalyzer');
 var roleLinkAttendant = require('role.linkAttendant');
 var roleLink = require('role.link');
@@ -20,44 +20,24 @@ var economyMonitor = require('economymonitor');
 var roleTargetedBuilder = require('role.targetedbuilder');
 var roleSpawn = require('role.spawn');
 var creepManager = require('creepmanager');
-var MAX_HARVESTERS =3;
+var MAX_HARVESTERS = 2;
 var MAX_BUILDERS = 0; 
 var MAX_EXPLORERS = 2; 
 var MAX_MINERS = 2;
 var MAX_HAULERS = 3;
-var MAX_LRM = 2;
-var MAX_WARRIORS = 2;
-var MAX_HEALERS = 2;
+var MAX_LRM = 3;
+var MAX_WARRIORS = 1;
+var MAX_HEALERS = 1;
 var MAX_CLAIMERS = 1;
 var MAX_REPAIRERS = 1;
-var MAX_LRHAULERS = 3;
-var MAX_ROAMINGWORKERS = 1;
-var MAX_TARGETEDBUILDERS = 1;
+var MAX_LRHAULERS = 4;
+var MAX_ROAMINGWORKERS = 2;
+var MAX_TARGETEDBUILDERS = 0;
 var CLAIMERROOMS = ['W18N67'];
 
 var shared = require('shared');
 
 const profiler = require('screeps-profiler');
-
-
-var getTotalEnergy = function() {
-    var spawn = Game.spawns['Spawn1'];
-    var totalCapacity = 0;
-    var usedCapacity = 0;
-    spawn.room.find(FIND_STRUCTURES, {
-        filter: function(structure) {
-            if ((structure.structureType === STRUCTURE_CONTAINER || structure.structureType === STRUCTURE_STORAGE) && structure.isActive()) {
-                totalCapacity += structure.storeCapacity; 
-                usedCapacity += structure.store[RESOURCE_ENERGY];
-            }
-        }
-    });
-    totalCapacity += spawn.energyCapacity;
-    usedCapacity += spawn.energy;
-    var empty = totalCapacity - usedCapacity;
-    return usedCapacity;
-}
-
 
 
 
@@ -119,9 +99,10 @@ var getPathToExit = function() {
 
 profiler.enable();
 module.exports.loop = function () {
-    //getPathToExit();
     profiler.wrap(function() {
-        //shared.getPath(14, 38, 27, 48, 'W19N68');
+        //Game.profiler.reset();
+        //Game.profiler.restart();
+        //Game.profiler.email(100);
         for(var name in Memory.creeps) {
             if(!Game.creeps[name]) {
                 if (Memory.creeps[name].totalenergydeposited != null) {
@@ -130,38 +111,19 @@ module.exports.loop = function () {
                 console.log('Clearing non-existing creep memory:', name);
             }
         }
+
         var spawn = Game.spawns['Spawn1'];
-        var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler'  && creep.memory.spawn != 'W18N67');
-        var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner'  && creep.memory.spawn != 'W18N67');
-        var minerconf = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE];
-        if (miners.length < MAX_MINERS) {
-            var newName = Game.spawns['Spawn1'].createCreep(minerconf, 'miner' + Math.floor((Math.random()*100000000) + 1), {role: 'miner', originalRole: 'miner', state: 'idle' });
-        }
-        var spawned = false; 
-        if (haulers.length < MAX_HAULERS) {
-            if(spawn.canCreateCreep([CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]) == 0) {
-                var newName = Game.spawns['Spawn1'].createCreep([CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE], 'hauler' + Math.floor((Math.random()*100000) + 1), {role: 'hauler', originalRole: 'hauler', state: 'idle'});
-            }
-        }
-        
-        var spawnc = roleClaimer.spawnClaimer(MAX_CLAIMERS);
-        if (spawnc && !spawned) {
-            var claimerconf = [CLAIM, MOVE]; 
-            var newName = Game.spawns['Spawn1'].createCreep(claimerconf, 'claimer' + Math.floor((Math.random()*100000) + 1), {role: 'claimer', originalRole: 'claimer', state: 'idle'});
-        }
-        
-        
-        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer' && creep.memory.spawn != 'W18N67');
-        var repairers = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer' && creep.memory.spawn != 'W18N67');
-        var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester' && creep.memory.spawn != 'W18N67');
+        roleTower.run();
+
+        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
         var warriors = _.filter(Game.creeps, (creep) => creep.memory.role == 'warrior');
         var healers = _.filter(Game.creeps, (creep) => creep.memory.role == 'healer');
-        var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.spawn != 'W18N67');
-        var lrhaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler' && creep.memory.spawn != 'W18N67');
+        var lrhaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler');
         var explorers = _.filter(Game.creeps, (creep) => creep.memory.role == 'explorer');
-        var linkattendants = _.filter(Game.creeps, (creep) => creep.memory.role == 'linkattendant');
         var roamingworkers = _.filter(Game.creeps, (creep) => creep.memory.role == 'roamingworker');
         var targetedbuilders = _.filter(Game.creeps, (creep) => creep.memory.role == 'targetedbuilder');
+        var spawned = false; 
+       
         
         var creepsInRange = spawn.pos.findInRange(FIND_MY_CREEPS, 1, {
             filter: function(obj) {
@@ -175,79 +137,45 @@ module.exports.loop = function () {
                 break;
             }
         }
-        if (linkattendants.length == 0) {
-            var linkattendantconfig = [CARRY, CARRY, CARRY, MOVE];
-            var newName = Game.spawns['Spawn1'].createCreep(linkattendantconfig, 'linkattendant' + Math.floor((Math.random()*100000) + 1), {role: 'linkattendant', originalRole: 'linkattendant', state: 'idle'});
-            
+
+        var needed = []; 
+        //console.log(creepManager.creepRoles['healer']);
+        if (healers.length < creepManager.creepRoles['healer'].max()) {
+            needed.push('healer');
         }
         
-        if (healers.length < MAX_HEALERS && !spawned) {
-            var healerconf = [TOUGH, HEAL, HEAL, HEAL, MOVE, MOVE, MOVE, MOVE];
-            var newName = Game.spawns['Spawn1'].createCreep(healerconf, 'healer' + Math.floor((Math.random()*100000) + 1), {role: 'healer', originalRole: 'healer', state: 'idle'});
+        if (warriors.length < creepManager.creepRoles['warrior'].max()) {
+            needed.push('warrior'); 
         }
-        if (warriors.length < MAX_WARRIORS && !spawned) {
-            var warriorconf = [TOUGH, ATTACK, MOVE, MOVE, TOUGH, ATTACK, MOVE, MOVE, TOUGH, ATTACK, MOVE, MOVE];
-            var warriorconfweak = [ATTACK, MOVE];
-            var newName = Game.spawns['Spawn1'].createCreep(warriorconf, 'warrior' + Math.floor((Math.random()*100000) + 1), {role: 'warrior', originalRole: 'warrior', state: 'idle'});
+        if (targetedbuilders.length < creepManager.creepRoles['targetedbuilder'].max()) {
+            needed.push('targetedbuilder');
         }
-        var lrmcost = 950;
-        var lrhaulercost = 1450;
-        if (creepsInRange.length === 0) {
-            if (miners.length >= MAX_MINERS && haulers.length >= MAX_HAULERS && warriors.length >= MAX_WARRIORS && healers.length >= MAX_HEALERS) {
-                if (targetedbuilders.length < MAX_TARGETEDBUILDERS) {
-                    var targetedbuilderconfig = [WORK, WORK, WORK, WORK, CARRY,CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE];
-                    var newName = Game.spawns['Spawn1'].createCreep(targetedbuilderconfig, 'targetedbuilder' + Math.floor((Math.random()*100000) + 1), {role: 'targetedbuilder', originalRole: 'targetedbuilder', state: 'idle'});
-                }
-                if (lrhaulers.length < MAX_LRHAULERS && !spawned) {
-                    var lrhaulerconf = [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE];
-                    var newName = Game.spawns['Spawn1'].createCreep(lrhaulerconf, 'lrhauler' + Math.floor((Math.random()*100000) + 1), {role: 'lrhauler', originalRole: 'lrhauler', state: 'idle'});
-                    if (!(newName < 0)) {
-                        Memory.lrmcost += lrhaulercost;
-                    } 
-                }
-                if (lrm.length < MAX_LRM && !spawned) {
-                    var lrmconf = [ WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE];
-                    var newName = Game.spawns['Spawn1'].createCreep(lrmconf, 'lrm' + Math.floor((Math.random()*100000) + 1), {role: 'longrangeminer', originalRole: 'longrangeminer', state: 'idle',totalenergydeposited: 0});
-                    if (!(newName < 0)) {
-                        Memory.lrmcost += lrmcost;
-                    } 
-                }
-                if (roamingworkers.length < MAX_ROAMINGWORKERS) {
-                    var roamingconf = [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
-                    if (spawn.canCreateCreep(roamingconf) == 0) {
-                        var newName = Game.spawns['Spawn1'].createCreep(roamingconf, 'roamingworker' + Math.floor((Math.random()*100000) + 1), {role: 'roamingworker', originalRole: 'roamingworker', state: 'idle'});
-                    }
-                }
-                if (repairers.length < MAX_REPAIRERS && !spawned) {
-                    var repairerconf = [WORK, WORK, CARRY, CARRY, MOVE, MOVE];
-                    if (spawn.canCreateCreep(repairerconf) == 0) {
-                        var newName = Game.spawns['Spawn1'].createCreep(repairerconf, 'repairer' + Math.floor((Math.random()*1000) + 1), {role: 'repairer', originalRole: 'repairer', state: 'idle' });
-                    }
-                }
-                if (explorers.length < MAX_EXPLORERS && !spawned) {
-                    var explorerconf = [ATTACK, ATTACK, MOVE, MOVE];
-                    if (spawn.canCreateCreep(explorerconf) == 0) {
-                        var newName = Game.spawns['Spawn1'].createCreep(explorerconf, 'explorer' + Math.floor((Math.random()*1000) + 1), {role: 'explorer', originalRole: 'explorer', state: 'idle' });
-                    }
-                }
-                var config = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE];
-                if (spawn.canCreateCreep(config) == 0 && !spawned){
-                    if (harvesters.length < MAX_HARVESTERS) {
-                        var newName = Game.spawns['Spawn1'].createCreep(config, 'harvester' + Math.floor((Math.random()*100000) +1), {role: 'harvester', originalRole: 'harvester', state: 'idle'});
-                    }
-                }
+        var lrHaulerNeeded = roleLrhauler.needLrHauler(); 
+        if (lrHaulerNeeded.length > 0) {
+            needed.push('lrhauler');
+        }
+        var lrmNeed = roleLongrangeminer.needLrm(); 
+        if (lrmNeed.length > 0) {
+            needed.push('longrangeminer');
+        }
+        if (roamingworkers.length < creepManager.creepRoles['roamingworker'].max()) {
+            needed.push('roamingworker');
+        }
+        if (explorers.length < MAX_EXPLORERS ) {
+            var explorerconf = [ATTACK, ATTACK, MOVE, MOVE];
+            if (spawn.canCreateCreep(explorerconf) == 0) {
+                var newName = Game.spawns['Spawn1'].createCreep(explorerconf, 'explorer' + Math.floor((Math.random()*1000) + 1), {role: 'explorer', originalRole: 'explorer', state: 'idle' });
             }
         }
         
-        var spawnname = '';
-        if (spawn.spawning) {
-            spawnname = spawn.spawning.name;
-        }
-        var lrhaulertargets = [];
-        var oktouporbuild = ((miners.length >= MAX_MINERS && haulers.length >= MAX_HAULERS && warriors.length >= MAX_WARRIORS && lrm.length >= MAX_LRM));
-        for(var name in Game.creeps) {
+        
+        //console.log("spawning " + spawnname);
+        var lrhaulertargets = []; for(var name in Game.creeps) {
             var creep = Game.creeps[name];
             //creep.say(creep.memory.state);
+            if (creep.memory.spawn == 'W19N66') {
+                creep.memory.spawn = 'Spawn1';
+            }
             if (creep.memory.role == 'extensionManager') {
                 roleExtensionManager.run(creep);  
             } else if (creep.memory.role == 'miner') {
@@ -278,14 +206,25 @@ module.exports.loop = function () {
                 roleTargetedBuilder.run(creep);
             }
             else {
-                roleHarvester.run(creep, oktouporbuild);
+                roleHarvester.run(creep, true);
             }
         }
-        var towers = spawn.room.find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
-        towers.forEach(tower => roleTower.run(tower));
         var links = spawn.room.find(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_LINK}});
         links.forEach(link => roleLink.run(link));
-        roleSpawn.run(Game.spawns['W18N67']);
+
+        var neededstr = ""; 
+        for (var i = 0; i < needed.length; i++) {
+            neededstr += needed[i] + " ";
+        }
+        //console.log("needed creeps: " + neededstr);
+        var ret = roleSpawn.run(Game.spawns['W18N67'], needed[0]);
+        if (_.isString(ret)) {
+            //console.log('W18N67 is building ' + needed[0]);
+            needed.shift();
+        } else {
+            //console.log("W18N67 is not building " + needed[0]);
+        }
+        roleSpawn.run(Game.spawns['Spawn1'], needed[0]);
         analyzer.run();
         economyMonitor.run();
         creepManager.run();
