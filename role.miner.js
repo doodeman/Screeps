@@ -66,6 +66,7 @@ var roleMiner = {
             creep.memory.state = 'harvesting';
         }
         if(creep.memory.state === 'harvesting') {
+            
             if (creep.carry.energy === creep.carryCapacity) {
                 creep.memory.state = 'full';
                 return;

@@ -35,7 +35,11 @@ var findTargetClaimer = function(creep) {
 
 var roleClaimer = {
     run: function(creep) {
-        var hostiles = creep.room.find(FIND_HOSTILE_CREEPS); 
+        var hostiles = shared.getObjInRoomCriteria(
+            creep.room.name, 'hostiles', 
+            function(obj) { return true; }, 
+            FIND_HOSTILE_CREEPS, 
+            5);
         if (hostiles.length > 0) {
             creep.room.controller.activateSafeMode();
         }
@@ -57,6 +61,9 @@ var roleClaimer = {
     claimerNeeded: function(rooms) {
         for (var i = 0; i < rooms.length; i++) {
             var room = Game.rooms[rooms[i]]; 
+            if (room == null) {
+                return rooms[i];
+            }
             var healthyClaimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
             if (healthyClaimers.length == 0) {
                 return room.name; 

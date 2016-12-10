@@ -52,7 +52,7 @@ var ROLES = {
         max: function(spawn) {
             switch (spawn.name) {
                 case 'W18N67': 
-                    return 2; 
+                    return 3; 
                 case 'Spawn1': 
                     return 4; 
             }
@@ -177,10 +177,12 @@ var updateCreeps = function(spawn, neededRole) {
     var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'hauler' && creep.memory.spawn == spawn.name); 
     var claimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.spawn == spawn.name); 
 
-    
+    var minersmax = ROLES['miner'].max(spawn);
+    var haulersmax = ROLES['hauler'].max(spawn);
 
-    var canSpawn = (miners.length > 0) && (haulers.length > 0); 
-    
+    var canSpawn = (miners.length == minersmax) && (haulers.length == haulersmax); 
+    //console.log("miners length " + miners.length + " minersmax " + minersmax + " haulers length " + haulers.length + " haulersmax " + haulersmax + " canSpawn: " + canSpawn);
+
     var claimerNeeded = roleClaimer.claimerNeeded(CLAIMROOMS[spawn.name]);
     var statusstr = "Can spawn non-hauler&miner: " + canSpawn; 
     for (var i = 0; i < ROLENAMES.length; i++) {
@@ -215,17 +217,17 @@ var updateCreeps = function(spawn, neededRole) {
         //console.log(spawn.name + " " + spawnname);
     }
     if (spawn.spawning != null) {
-            //console.log(spawn.name + " spawning " + spawn.spawning.name);
     }
-    if (!spawning && neededRole != null) {
-        if (neededRole == 'lrhauler') {
-            var targetRoom = roleLrhauler.needLrHauler()[0]; 
-        } else if (neededRole = 'longrangeminer') {
-            var targetRoom = roleLongrangeminer.needLrm()[0];
-        } 
-        else {
-            var targetRoom = spawn.room.name; 
-        }
+    if (!spawning && canSpawn && neededRole != null) {
+        //if (neededRole == 'lrhauler') {
+         //   var targetRoom = roleLrhauler.needLrHauler()[0]; 
+        //}
+        //if (neededRole == 'longrangeminer') {
+        //    var targetRoom = roleLongrangeminer.needLrm()[0];
+        //} else {
+        //    var targetRoom = spawn.room.name; 
+        //}
+        var targetRoom = spawn.room.name; 
         var newName = spawn.createCreep(creepManager.creepRoles[neededRole].configuration, neededRole + Math.floor((Math.random()*100000) + 1), { role: neededRole, originalRole: neededRole, state: 'idle', room: targetRoom, spawn: spawn.name});     
         return newName; 
     }

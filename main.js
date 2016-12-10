@@ -40,60 +40,9 @@ var shared = require('shared');
 const profiler = require('screeps-profiler');
 
 
-
-var adjacent = function(obj) {
-    var adjacent = 0;
-    for (var x = 0; x < 3; x++) {
-        for (var y = 0; y < 3; y++) {
-            var lookat = obj.room.lookAt(obj.pos.x-1 + x, obj.pos.y-1 + y);
-            for(var i = 0; i < lookat.length; i++) {
-                if ((lookat[i].type === 'terrain' && lookat[i].terrain === 'wall') || (lookat[i].type == 'creep')) {
-                    adjacent += 1;
-                } 
-            }
-            //if (lookat > 0) {
-             //   adjacent += 1; 
-            //}
-        }
-    }
-    return adjacent;
-}
-
 var logObject = function(p) {
     for (var key in p) {
         console.log(key + " -> " + p[key]);
-    }
-}
-
-
-
-var getPathsToSources = function() {
-    var spawn = Game.spawns['Spawn1'];
-    var sources = spawn.room.find(FIND_SOURCES);
-    var paths = [];
-    for (var i = 0; i < sources.length; i++) {
-        paths.push(spawn.room.findPath(spawn.pos, sources[i].pos, {ignoreCreeps: true}));
-    }
-    for (var i = 0; i < paths.length; i++) {
-        for (var n = 0; n < paths[i].length; n++) {
-            var conRes = spawn.room.createConstructionSite(paths[i][n].x, paths[i][n].y, STRUCTURE_ROAD);
-        }
-    }
-    var contPath = spawn.room.findPath(spawn.pos, spawn.room.controller.pos, {ignoreCreeps: true});
-    for (var i = 0; i < contPath.length; i++) {
-        spawn.room.createConstructionSite(contPath[i].x, contPath[i].y, STRUCTURE_ROAD);
-    }
-}
-
-var getPathToExit = function() {
-    var spawn = Game.spawns['Spawn1'];
-    var storage = Game.getObjectById('57ef9d7886f108ae6e60dcc0');
-    var route = Game.map.findRoute(storage.room, 'W19N66');
-    if(route.length > 0) {
-        var path = storage.pos.findPathTo(storage.pos.findClosestByRange(route[0].exit), {ignoreRoads: true});
-        for (var i = 0; i < path.length; i++) {
-            storage.room.createConstructionSite(path[i].x, path[i].y, STRUCTURE_ROAD);
-        }
     }
 }
 
@@ -140,6 +89,7 @@ module.exports.loop = function () {
 
         var needed = []; 
         //console.log(creepManager.creepRoles['healer']);
+        
         if (healers.length < creepManager.creepRoles['healer'].max()) {
             needed.push('healer');
         }
@@ -150,12 +100,12 @@ module.exports.loop = function () {
         if (targetedbuilders.length < creepManager.creepRoles['targetedbuilder'].max()) {
             needed.push('targetedbuilder');
         }
-        var lrHaulerNeeded = roleLrhauler.needLrHauler(); 
-        if (lrHaulerNeeded.length > 0) {
+        //var lrHaulerNeeded = roleLrhauler.needLrHauler(); 
+        if (lrhaulers.length < 8) {
             needed.push('lrhauler');
         }
         var lrmNeed = roleLongrangeminer.needLrm(); 
-        if (lrmNeed.length > 0) {
+        if (lrm.length < 8) {
             needed.push('longrangeminer');
         }
         if (roamingworkers.length < creepManager.creepRoles['roamingworker'].max()) {

@@ -9,7 +9,7 @@
 var shared = require('shared');
 var configs = require('configs');
 var ROOMS = ['W19N66', 'W18N66', 'W18N67'];
-var LRHAULERROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68', 'W17N67'];
+var LRHAULERROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68', 'W17N67', 'W18N65'];
 var FREQ = 50;
 var economyMonitor = {
 	run: function() {

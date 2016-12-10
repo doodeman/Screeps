@@ -35,7 +35,6 @@ var getRoomTarget = function(creep) {
     for (var i = 0; i < ROOMS.length; i++) {
         if (MAXROOMS[ROOMS[i]] > targets[ROOMS[i]]) {
             creep.memory.room = ROOMS[i]; 
-            
             return ROOMS[i];
         }
     }
@@ -54,6 +53,7 @@ var findTarget = function(creep) {
         if (used.indexOf(sources[i].id) == -1) {
             creep.memory.state = 'mining'; 
             creep.memory.target = sources[i].id;
+            console.log("lrminer target set to " + sources[i].id + " in " + creep.room.name);
             return sources[i];
             return;
         }
@@ -67,15 +67,18 @@ var findTarget = function(creep) {
 var longrangeminer = {
     needLrm: function() {
         var needrooms = [];
+
         for (var i = 0; i < ROOMS.length; i++) {
             var room = Game.rooms[ROOMS[i]]; 
-            var healthyHaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
-            var neededForRoom =  MAXROOMS[room.name];
-            if (healthyHaulers.length < neededForRoom) {
-                needrooms.push(room.name); 
+            if (room != null) {
+                var healthyHaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
+                //console.log("healthyHauler " + healthyHaulers.length);
+                var neededForRoom =  MAXROOMS[room.name];
+                if (healthyHaulers.length < neededForRoom) {
+                    needrooms.push(room.name); 
+                }
             }
         }
-        console.log("lrminer needrooms: " + needrooms); 
         return needrooms; 
     },
     run: function(creep) {
@@ -85,7 +88,12 @@ var longrangeminer = {
                 return object.getActiveBodyparts(ATTACK) > 0;
             }
         });
-        if (creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
+        var dropped = creep.room.find(FIND_DROPPED_RESOURCES);
+        var closestDrop = creep.pos.findClosestByRange(dropped);
+        if (creep.pos.getRangeTo(closestDrop) < 2) {
+            creep.pickup(closestDrop);
+        }
+        if (creep.memory.room == null || creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
             creep.memory.room = '';
         }
         if (hostiles.length) {
@@ -107,8 +115,7 @@ var longrangeminer = {
             creep.memory.target = '';
         }
         if (creep.memory.state == 'noviable') {
-            creep.memory.state = 'idle';
-            creep.memory.room = '';
+            creep.memory.target = '';
             return;
         }
         if(creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
@@ -122,7 +129,22 @@ var longrangeminer = {
             }
         }
         if (creep.memory.state == 'mining') {
-            
+            /*
+            Mining state description: 
+            If there are dropped resources in reach
+                pick them up
+            If not in target room
+                move to target room 
+                end
+            Try to harvest target
+            If not in range of target
+                move to target
+
+            */
+            if (creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
+                creep.memory.state = 'returning';
+                return;
+            }
             var dropped = creep.room.find(FIND_DROPPED_RESOURCES);
             var closestDrop = creep.pos.findClosestByRange(dropped);
             if (creep.pos.getRangeTo(closestDrop) < 1) {
@@ -131,10 +153,6 @@ var longrangeminer = {
             }
             if (typeof creep.memory.room === 'undefined' || creep.memory. room == '') {
                 getRoomTarget(creep);
-            }
-            if (creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
-                creep.memory.state = 'returning';
-                return;
             }
             if (creep.room.name != creep.memory.room) {
                 shared.moveBetweenRooms(creep, creep.memory.room);
@@ -146,7 +164,6 @@ var longrangeminer = {
                 var target = Game.getObjectById(creep.memory.target);
             }
             if (target.room.name != creep.memory.room) {
-                console.log("LRHAULER TARGET NOT IN ROOM, CLEARING");
                 target = findTarget(creep);
                 return;
             }
@@ -154,42 +171,34 @@ var longrangeminer = {
                 creep.memory.target = '';
                 return;
             }
-            if (creep.memory.room != creep.memory.room) {
-                creep.memory.target = '';
-                if (creep.room.name == creep.memory.room) {
-                    shared.moveByPath(creep, new RoomPosition(20,20, creep.room.name));
-                    return;
-                }
-            }
             var harvestResult = creep.harvest(target);
             if (harvestResult == -1) {
                 creep.memory.target = '';
-                creep.memory.room = '';
-                creep.memory.state = 'idle';
                 return;
             }
             if (harvestResult === -6) {
-                creep.memory.target = '';
-                creep.memory.state = 'idle';
                 return;
             }
             else if(harvestResult !== 0) {
                 var moveresult = shared.moveByPath(creep, target);
-                if (moveresult === -7) {
+                if (moveresult === -11 || moveresult == -4 || moveresult == 0) {
+                    //acceptable errors
                 }
-                if (moveresult !== 0 && moveresult !== -11) {
-                }
-                if (moveresult === -2) {
+                else if (moveresult < 0) {
                     creep.memory.target = '';
-                    creep.memory.room = ''; 
                     findTarget(creep);
-                    shared.moveByPath(creep, new RoomPosition(20,20, creep.room.name));
                     return;
                 }
                 return;
             }
         }
         if (creep.memory.state == 'returning') {
+            /*
+            Returning state
+            If there are construction sites close by
+                construct them
+
+            */
             if (_.sum(creep.carry) == 0) {
                 creep.memory.state = 'idle';
                 return;
@@ -215,7 +224,17 @@ var longrangeminer = {
                 var target = creep.pos.findClosestByRange(targets);
 
                 if (target.store[RESOURCE_ENERGY] == target.storeCapacity) {
-                    
+                    console.log(creep.room.name + " here!!");
+                    var oldTarget = target; 
+                    targets = _.filter(targets, (structure) => structure.storeCapacity - structure.store[RESOURCE_ENERGY] > creep.carryCapacity);
+                    if (targets.length == 0) {
+                        
+                    } else {
+                        target = creep.pos.findClosestByRange(targets); 
+                        if (creep.pos.getRangeTo(target) > 5) { 
+                            target = oldTarget; 
+                        }
+                    }
                 }
 
                 if (target.hits < target.hitsMax) {

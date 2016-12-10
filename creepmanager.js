@@ -38,7 +38,11 @@ var creepManager = {
 				}
 				
 			}
-			var retstr = name + " creeps: ";
+			var spawnname = ""; 
+			if (spawn.spawning != null) {
+				spawnname = spawn.spawning.name; 
+			}
+			var retstr = name + " spawning: " + spawnname + ", creeps: ";
 			for (var role in roles) {
 				retstr += role + ": " + roles[role] + " ";
 			}

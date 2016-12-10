@@ -1,8 +1,14 @@
-var AVOID = ['W20N68']
+var AVOID = ['W20N68', 'W16N66', 'W15N66']
 
  var shared = {
 
- 	getObjInRoomCriteria(room, name, filterfunc) {
+ 	getObjInRoomCriteria(room, name, filterfunc, findType, cacheTime) {
+ 		if (findType == null) {
+ 			findType = FIND_STRUCTURES;
+ 		} 
+ 		if (cacheTime == null) {
+ 			cacheTime = 300;
+ 		}
  		if (Memory.objCache == null) {
  			Memory.objCache = {};
  		}
@@ -14,7 +20,7 @@ var AVOID = ['W20N68']
 			updated = true; 
 		}
 		var sinceLast = Game.time - Memory.objCache[name].lastUpdated;
-		if (sinceLast > 300) {
+		if (sinceLast > cacheTime) {
 			Memory.objCache[name] = {}; 
 			Memory.objCache[name][name] = {}; 
 			Memory.objCache[name].lastUpdated = Game.time; 
@@ -22,7 +28,7 @@ var AVOID = ['W20N68']
 		}
 		if (Memory.objCache[name][name][room] == null 
 			|| Object.keys(Memory.objCache[name][name][room]).length == 0) {
-			this.updateObjectInRoomCriteria(room, name, filterfunc);
+			this.updateObjectInRoomCriteria(room, name, filterfunc, findType);
 			updated = true; 
 		}
 		var objects = []; 
@@ -35,8 +41,8 @@ var AVOID = ['W20N68']
 		return objects;
  	},
 
- 	updateObjectInRoomCriteria(room, name, filterfunc) {
-		var targets = Game.rooms[room].find(FIND_STRUCTURES, {
+ 	updateObjectInRoomCriteria(room, name, filterfunc, findType) {
+		var targets = Game.rooms[room].find(findType, {
 	        filter: filterfunc
 	    });
 	    if (Memory.objCache[name][name][room] == null) {
@@ -86,7 +92,6 @@ var AVOID = ['W20N68']
 	    if (creep.pos.getRangeTo(target) > 1) {
 	        creep.room.lookAt(creep.memory.path[0].x, creep.memory.path[0].y).forEach(function(lookObject) {
     	        if (lookObject.type == LOOK_CREEPS) {
-    	            console.log(creep.name + " Here, generating new path");
     	            var path = shared.findPath(creep, target);
     	            return;
     	        }

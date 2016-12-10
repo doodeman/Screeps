@@ -26,13 +26,17 @@ var enemyAnalyzer = {
     	if (tickssincelast < 50) {
     		return;
     	}
-    	var creeps = Game.rooms[room].find(FIND_HOSTILE_CREEPS, {
+        var room = Game.rooms[room]; 
+        if (room == null) {
+            return;
+        }
+    	var creeps = room.find(FIND_HOSTILE_CREEPS, {
 		    filter: function(object) {
 		        return object.getActiveBodyparts(ATTACK) > 0 || object.getActiveBodyparts(RANGED_ATTACK) > 0 || object.getActiveBodyparts(HEAL) > 0;
 		    }
 		});
     	var enemies = this.getCreepReports(creeps);
-    	var friends = Game.rooms[room].find(FIND_MY_CREEPS, {
+    	var friends = room.find(FIND_MY_CREEPS, {
 		    filter: function(object) {
 		        return object.getActiveBodyparts(ATTACK) > 0 || object.getActiveBodyparts(RANGED_ATTACK) > 0 || object.getActiveBodyparts(HEAL) > 0;
 		    }

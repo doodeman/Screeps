@@ -3,25 +3,21 @@
 var shared = require('shared');
 
 var findTargetHaulerNew = function(creep) {
-    console.log("findtargethaulernew " + creep.name + " in room " + creep.room.name);
+    //console.log("findtargethaulernew " + creep.name + " in room " + creep.room.name);
     
     var targets = shared.getObjInRoomCriteria(creep.room.name, "container", function(structure) { return structure.structureType == STRUCTURE_CONTAINER; });
     targets = _.filter(targets, (structure) => structure.store[RESOURCE_ENERGY] > (creep.carryCapacity - creep.carry[RESOURCE_ENERGY]));
     if (targets.length > 0) {
         var otherTargets = []; 
         var others = creep.room.find(FIND_MY_CREEPS, { filter: function(other) { return other.memory.role == 'hauler'; }});
-        console.log("others length " + others.length);
         for (var i = 0; i < others.length; i++) {
             otherTargets.push(others[i].memory.target);
         }
-        console.log("otherTargets: " + otherTargets);
         for (var i = 0; i < targets.length; i++) {
             var index = otherTargets.indexOf(targets[i].id);
-            console.log("index of " + targets[i].id + " " + index);
             if (index == -1) {
                 var target = targets[i];
                 creep.memory.target = target.id; 
-                console.log("returning " + target.id + " because noone else has it");
                 return target; 
             }
         }

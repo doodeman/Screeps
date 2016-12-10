@@ -7,7 +7,6 @@ var shared = require('shared');
 
 
 var findDepositRoom = function(creep) {
-    console.log("find deposit room");
     var spawnDistances = [];
     for (var spawnName in Game.spawns) {
         var spawn = Game.spawns[spawnName];
@@ -26,31 +25,15 @@ var findDepositRoom = function(creep) {
 }
 
 var findDepositTargetLongRange = function(creep) {
-    var targets = creep.room.find(FIND_STRUCTURES, {
-       filter: function(structure) {
-           if (structure.structureType == STRUCTURE_LINK) {
-                return true;
-           }
-       } 
-    });
-    if (targets.length == 0) {
-        var targets = creep.room.find(FIND_STRUCTURES, {
-           filter: function(structure) {
-               if ((structure.structureType == STRUCTURE_CONTAINER || structure.structureType == STRUCTURE_STORAGE) && structure.store[RESOURCE_ENERGY] < structure.storeCapacity - 800) {
-                    if (structure.id != '584459645d38162345731385') {
-                        return true;
-                    }
-               }
-           } 
-        });
-        if (targets.length == 0) {
-            return -1;
-        }
-        return creep.pos.findClosestByRange(targets);;
-    }
-    var target = creep.pos.findClosestByRange(targets);
+
+    var targets = shared.getObjInRoomCriteria(creep.room.name, "container", function(structure) { return structure.structureType == STRUCTURE_CONTAINER; });
+    targets = targets.concat(shared.getObjInRoomCriteria(creep.room.name, "link", function(structure) { return structure.structureType == STRUCTURE_LINK; }));
+    targets = targets.concat(shared.getObjInRoomCriteria(creep.room.name, "storage", function(structure) { return structure.structureType == STRUCTURE_STORAGE; }));
     
-    return target;
+    if (targets.length == 0) {
+        return -1;
+    }
+    return creep.pos.findClosestByRange(targets);
 }
 
 var findTargetRoom = function(creep) {
@@ -127,19 +110,24 @@ var roleLrhauler = {
         var needrooms = [];
         for (var i = 0; i < ROOMS.length; i++) {
             var room = Game.rooms[ROOMS[i]]; 
-            var healthyHaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler' && creep.memory.room == room.name && creep.ticksToLive > 150 );
-            var neededForRoom =  economymonitor.getLrHaulerNeedForRoom(room.name);
-            if (healthyHaulers.length < neededForRoom) {
-                needrooms.push(room.name); 
+            if (room != null) {
+                var healthyHaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler' && creep.memory.room == room.name && creep.ticksToLive > 150 );
+    
+                var neededForRoom =  economymonitor.getLrHaulerNeedForRoom(room.name);
+                if (healthyHaulers.length < neededForRoom) {
+                    needrooms.push(room.name); 
+                }
             }
         }
-        console.log("lrhauler needrooms: " + needrooms); 
         return needrooms; 
     },
     configuration: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
     run: function(creep) {
-
-        if (creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
+        //console.log(creep.name + " " + creep.memory.room);
+        if (creep.ticksToLive < 200) {
+            //console.log(creep.name + " " + creep.ticksToLive);
+        }
+        if (creep.memory.room == null || creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
             creep.memory.room = '';
         }
         creep.say(creep.memory.room);
@@ -273,7 +261,14 @@ var roleLrhauler = {
                 creep.memory.depositRoom = findDepositRoom(creep);
                 console.log(creep.name + " in " + creep.room.name + " deposit room is " + creep.memory.depositRoom);
             }
+            if (creep.room.name == 'W18N67') {
+                creep.memory.depositRoom == 'W18N67'; 
+            }
+            if (creep.room.name == 'W19N66') {
+                creep.memory.depositRoom = 'W19N66';
+            }
             if (creep.room.name !== creep.memory.depositRoom) {
+
                 shared.moveBetweenRooms(creep, creep.memory.depositRoom);
                 return;
             }

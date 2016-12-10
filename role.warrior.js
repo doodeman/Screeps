@@ -122,21 +122,30 @@ var roleWarrior = {
         if (creep.memory.state == 'attack') {
             
             
-            
-            var targets = creep.room.find(FIND_HOSTILE_STRUCTURES, {
-                filter: {structureType: STRUCTURE_TOWER}
-            });
+            var targets = shared.getObjInRoomCriteria(
+                creep.room.name, 'hostile_towers', 
+                function(obj) { return obj.structureType == STRUCTURE_TOWER; }, 
+                FIND_HOSTILE_STRUCTURES, 
+                20);
             if (targets.length == 0) {
-                var targets = creep.room.find(FIND_HOSTILE_CREEPS, {
-                    filter: function(object) {
-                        return object.getActiveBodyparts(ATTACK) || object.getActiveBodyparts(RANGED_ATTACK) || object.getActiveBodyparts(HEAL) > 0;
-                    }
-                });
+                var targets = shared.getObjInRoomCriteria(
+                    creep.room.name, 'hostile_fighters', 
+                    function(object) { return object.getActiveBodyparts(ATTACK) || object.getActiveBodyparts(RANGED_ATTACK) || object.getActiveBodyparts(HEAL) > 0; }, 
+                    FIND_HOSTILE_CREEPS, 
+                    5); 
                 if (targets.length == 0) {
                     creep.memory.underattack = false;
-                    var targets = creep.room.find(FIND_HOSTILE_CREEPS);
+                    var hostiles = shared.getObjInRoomCriteria(
+                        creep.room.name, 'hostiles', 
+                        function(obj) { return true; }, 
+                        FIND_HOSTILE_CREEPS, 
+                        5);
                     if (targets.length == 0) {
-                        var targets = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: function(obj)  { return obj.structureType != STRUCTURE_CONTROLLER; }});
+                        var hostiles = shared.getObjInRoomCriteria(
+                        creep.room.name, 'hostile_structures', 
+                        function(obj) { return obj.structureType != STRUCTURE_CONTROLLER; }, 
+                            FIND_HOSTILE_STRUCTURES, 
+                        10);
                     }
                 } else {
                     

@@ -81,8 +81,7 @@ var roleTargetedBuilder = {
                 var targets = _.filter(targets, 
                 	(structure) => (
                 		((structure.structureType == STRUCTURE_WALL) || (structure.structureType == STRUCTURE_RAMPART))
-				        && (structure.hits < 300000)));
-               	console.log("targets len " + targets.length);
+				        && (structure.hits < 1000000)));
 
                 if (targets.length > 0) {
                 	var target = creep.pos.findClosestByRange(targets);
@@ -91,7 +90,6 @@ var roleTargetedBuilder = {
                 	return;
                 }
                 var result = creep.repair(target);
-                console.log(target + " " + targets.length);
                 if (result == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                     return; 

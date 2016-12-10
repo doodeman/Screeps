@@ -1,4 +1,4 @@
-var ROOMS = ['W18N66', 'W17N66', 'W19N68', 'W17N67', 'W18N65'];
+var ROOMS = ['W18N66', 'W17N66', 'W19N68', 'W17N67', 'W18N65', 'W19N67'];
 var shared = require('shared');
 
 var findRoom = function(creep) {
@@ -6,13 +6,12 @@ var findRoom = function(creep) {
 	for (var i =0; i < ROOMS.length; i++) {
 		var room = Game.rooms[ROOMS[i]]; 
 		if (room == null) {
-		    return ROOMS[i];
+		    continue;
 		}
-		var needrepairs = room.find(FIND_STRUCTURES, {
-			filter: function(obj) {
-				return (obj.hits < obj.hitsMax*0.8);
-		}});
-		var needbuilding = room.find(FIND_CONSTRUCTION_SITES);
+
+		var needrepairs = shared.getObjInRoomCriteria(room.name, 'need_repairs', function(obj) { return (obj.hits < obj.hitsMax*0.8); }, FIND_STRUCTURES, 20); 
+		var needbuilding = shared.getObjInRoomCriteria(room.name, 'constructionsites', function(obj) { return true; }, FIND_CONSTRUCTION_SITES, 20); 
+	
 		var needval = 0; 
 		for (var n = 0; n < needrepairs.length; n++) {
 			var obj = needrepairs[n];
@@ -35,7 +34,9 @@ var findRoom = function(creep) {
 		}
 	}
 	if (isdefault) {
+	    //console.log("it's default");
 	}
+	//console.log("returning " + mostneedname);
 	creep.memory.room = mostneedname; 
 	return mostneedname; 
 }
@@ -82,31 +83,17 @@ var roamingWorker = {
 					shared.moveBetweenRooms(creep, spawn.room);
 					return;
 				}
-				/*
-			    var flags = creep.room.find(FIND_FLAGS);
-                if (flags.length) {
-                    var flag = flags[0];
-                    if (flag != null && flag.room.name == creep.room.name) {
-                        creep.moveTo(flag);		    
-                        console.log("roamingworker here4");
-                        return;
-                    }
-                } else {
-                    creep.moveTo(20,20);
-                }*/
 			}
 			if (creep.memory.targetid == null || creep.memory.targetid == '') {
-				var needbuilding = creep.room.find(FIND_CONSTRUCTION_SITES);
-				if (needbuilding.length > 0) {
-					var target = creep.pos.findClosestByRange(needbuilding); 
-				} 
-				var needrepairs = creep.room.find(FIND_STRUCTURES, {
-						filter: function(obj) {
-							return (obj.hits < obj.hitsMax*0.8);
-				}});
+				var needrepairs = shared.getObjInRoomCriteria(creep.room.name, 'need_repairs', function(obj) { return (obj.hits < obj.hitsMax*0.8); }, FIND_STRUCTURES, 10); 
+				var needbuilding = shared.getObjInRoomCriteria(creep.room.name, 'constructionsites', function(obj) { return true; }, FIND_CONSTRUCTION_SITES, 10); 
+				
 				if (needrepairs.length > 0) {
 					var target = creep.pos.findClosestByRange(needrepairs);
 				}
+				if (needbuilding.length > 0) {
+					var target = creep.pos.findClosestByRange(needbuilding); 
+				} 
 				
 				if (target != null) {
 					creep.memory.targetid = target.id; 

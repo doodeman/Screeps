@@ -7,40 +7,18 @@ var ROOMSMAX = {
 var shared = require('shared');
 
 
-
-
-var findTargetRoom = function(creep) {
-    var haulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
-    var targets = {};
-    for (var i = 0; i < haulers.length; i++) {
-        if (haulers[i].memory.room != null) {
-            if (targets[haulers[i].memory.room] == null) {
-                targets[haulers[i].memory.room] = 1; 
-            } else {
-                targets[haulers[i].memory.room] += 1; 
-            }
-        }
-    }
-    for (var i = 0; i < ROOMS.length; i++) {
-        if (targets[ROOMS[i]] == null || targets[ROOMS[i]] < ROOMSMAX[ROOMS[i]]) {
-            creep.memory.room = ROOMS[i];
-            return;
-        }
-    }
-}
-
 var roleRepairer = {
 
     /** @param {Creep} creep **/
     run: function(creep) {
         //creep.say(creep.memory.state);
         var spawn = Game.spawns['Spawn1'];
-        
+        shared.moveIntoRoom(creep);
         if (creep.ticksToLive < 1400 && creep.pos.getRangeTo(spawn) < 2 && spawn.energy > 100) {
             return;
         }
         if (creep.room.name == spawn.room.name && creep.ticksToLive < 500) {
-            creep.moveTo(spawn);
+            shared.moveByPath(creep, spawn);
             spawn.renewCreep(creep);
             return;
         } 
@@ -75,7 +53,7 @@ var roleRepairer = {
                 var tranResult = target.transferEnergy(creep); 
             }
             if (tranResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target);
+                shared.moveByPath(creep, target);
                 return; 
             } else if (tranResult === ERR_FULL) {
                 creep.memory.state = 'repairing';
@@ -145,7 +123,7 @@ var roleRepairer = {
                 }
                 var result = creep.repair(target);
                 if (result == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
+                    shared.moveByPath(creep, target);
                     return; 
                 } else if (result == 0) {
                     return;
