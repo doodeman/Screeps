@@ -53,6 +53,9 @@ var roleClaimer = {
             return;
         } else {
             var moveRes = creep.moveTo(creep.room.controller, {ignoreRoads: true});
+            if (creep.room.name == 'W18N65') {
+                var claim = creep.claimController(creep.room.controller);
+            }
             var reserve = creep.reserveController(creep.room.controller);
             //creep.say(reserve);
             return;
@@ -60,13 +63,10 @@ var roleClaimer = {
     }, 
     claimerNeeded: function(rooms) {
         for (var i = 0; i < rooms.length; i++) {
-            var room = Game.rooms[rooms[i]]; 
-            if (room == null) {
-                return rooms[i];
-            }
-            var healthyClaimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
+            var room = rooms[i]; 
+            var healthyClaimers = _.filter(Game.creeps, (creep) => creep.memory.role == 'claimer' && creep.memory.room == room && creep.ticksToLive > 150 );
             if (healthyClaimers.length == 0) {
-                return room.name; 
+                return room; 
             }
         }
         return null; 

@@ -7,7 +7,6 @@ var roleMiner = require('role.miner');
 var roleHauler = require('role.hauler');
 var roleWarrior = require('role.warrior');
 var roleExtensionManager = require('role.extensionManager');
-var roleRepairer = require('role.repairer');
 var roleLongrangeminer = require('role.longrangeminer');
 var roleLrhauler = require('role.lrhauler');
 var roleHealer = require('role.healer');
@@ -20,6 +19,8 @@ var economyMonitor = require('economymonitor');
 var roleTargetedBuilder = require('role.targetedbuilder');
 var roleSpawn = require('role.spawn');
 var creepManager = require('creepmanager');
+var roleWallWorker = require('wallworker');
+var spawn2spawnhauler = require('role.spawn2spawnhauler');
 var MAX_HARVESTERS = 2;
 var MAX_BUILDERS = 0; 
 var MAX_EXPLORERS = 2; 
@@ -34,6 +35,7 @@ var MAX_LRHAULERS = 4;
 var MAX_ROAMINGWORKERS = 2;
 var MAX_TARGETEDBUILDERS = 0;
 var CLAIMERROOMS = ['W18N67'];
+var roadmanager = require('roadmanager');
 
 var shared = require('shared');
 
@@ -49,6 +51,8 @@ var logObject = function(p) {
 profiler.enable();
 module.exports.loop = function () {
     profiler.wrap(function() {
+        console.log("\nTick " + Game.time);
+        //shared.getPath(30, 10, 5, 20, 'W18N65');
         //Game.profiler.reset();
         //Game.profiler.restart();
         //Game.profiler.email(100);
@@ -88,7 +92,6 @@ module.exports.loop = function () {
         }
 
         var needed = []; 
-        //console.log(creepManager.creepRoles['healer']);
         
         if (healers.length < creepManager.creepRoles['healer'].max()) {
             needed.push('healer');
@@ -100,26 +103,25 @@ module.exports.loop = function () {
         if (targetedbuilders.length < creepManager.creepRoles['targetedbuilder'].max()) {
             needed.push('targetedbuilder');
         }
+
         //var lrHaulerNeeded = roleLrhauler.needLrHauler(); 
-        if (lrhaulers.length < 8) {
-            needed.push('lrhauler');
-        }
-        var lrmNeed = roleLongrangeminer.needLrm(); 
-        if (lrm.length < 8) {
+
+        var lrMinerNeed = economyMonitor.lrMinerNeed();
+        //console.log("lrMinerNeed: " + lrMinerNeed);
+        if (lrMinerNeed.length > 0) {
             needed.push('longrangeminer');
+        }
+        var lrHaulerNeed = economyMonitor.lrHaulerNeed();
+        console.log("lrhaulerneed: " + lrHaulerNeed);
+        if (lrHaulerNeed.length > 0) {
+            console.log("need lrhauler!");
+            needed.push('lrhauler');
         }
         if (roamingworkers.length < creepManager.creepRoles['roamingworker'].max()) {
             needed.push('roamingworker');
         }
-        if (explorers.length < MAX_EXPLORERS ) {
-            var explorerconf = [ATTACK, ATTACK, MOVE, MOVE];
-            if (spawn.canCreateCreep(explorerconf) == 0) {
-                var newName = Game.spawns['Spawn1'].createCreep(explorerconf, 'explorer' + Math.floor((Math.random()*1000) + 1), {role: 'explorer', originalRole: 'explorer', state: 'idle' });
-            }
-        }
         
         
-        //console.log("spawning " + spawnname);
         var lrhaulertargets = []; for(var name in Game.creeps) {
             var creep = Game.creeps[name];
             //creep.say(creep.memory.state);
@@ -130,8 +132,6 @@ module.exports.loop = function () {
                 roleExtensionManager.run(creep);  
             } else if (creep.memory.role == 'miner') {
                 roleMiner.run(creep);
-            } else if (creep.memory.role == 'repairer') {
-                roleRepairer.run(creep);
             } else if (creep.memory.role == 'hauler') {
                 //creep.memory.state = 'idle';
                 roleHauler.run(creep);
@@ -154,6 +154,10 @@ module.exports.loop = function () {
                 roleRoamingWorker.run(creep);
             } else if (creep.memory.role == 'targetedbuilder') {
                 roleTargetedBuilder.run(creep);
+            } else if (creep.memory.role == 'wallworker') {
+                roleWallWorker.run(creep);
+            } else if (creep.memory.role == 'spawn2spawnhauler') {
+                spawn2spawnhauler.run(creep);
             }
             else {
                 roleHarvester.run(creep, true);
@@ -166,18 +170,17 @@ module.exports.loop = function () {
         for (var i = 0; i < needed.length; i++) {
             neededstr += needed[i] + " ";
         }
-        //console.log("needed creeps: " + neededstr);
         var ret = roleSpawn.run(Game.spawns['W18N67'], needed[0]);
         if (_.isString(ret)) {
-            //console.log('W18N67 is building ' + needed[0]);
             needed.shift();
         } else {
-            //console.log("W18N67 is not building " + needed[0]);
         }
         roleSpawn.run(Game.spawns['Spawn1'], needed[0]);
+        roleSpawn.run(Game.spawns['W18N65']);
         analyzer.run();
         economyMonitor.run();
         creepManager.run();
+        roadmanager.run();
         //economyMonitor.updateContainers();
     });
     

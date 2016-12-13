@@ -12,11 +12,23 @@ var ROOMS = ['W19N66', 'W18N66', 'W18N67'];
 var LRHAULERROOMS = ['W18N66', 'W19N67', 'W17N66', 'W19N68', 'W17N67', 'W18N65'];
 var FREQ = 50;
 var economyMonitor = {
+	lrminingRooms: {
+		'W18N66': 2,
+		'W17N67': 2, 
+		'W19N67': 1
+	},
+	getLrHaulerNeedForRoom (room) {
+		return this.lrminingRooms[room];
+	},
 	run: function() {
-		if (Game.time % FREQ == 0) {
-			this.analyze();
-			this.updateContainers(); 
-			this.updateLrHaulerNeed();
+		this.lrMinerNeed();
+		if (Memory.economyMonitor == null || Memory.economyMonitor.lastRan == null) {
+			Memory.economyMonitor = {};
+			Memory.economyMonitor.lastRan = Game.time; 
+		}
+		if (Game.time - Memory.economyMonitor.lastRan > FREQ) {
+			//this.analyze();
+			Memory.economyMonitor.lastRan = Game.time;
 		}
 	}, 
 	analyze: function() {
@@ -93,75 +105,94 @@ var economyMonitor = {
 		if (Memory.lrcontainers == null) {
 			Memory.lrcontainers = {}; 
 		}
-		if (spawn == undefined) {
-			var spawn = Game.getObjectById('583d68476058ee051590a195');
-		} else {
-			var spawn = Game.spawns[spawn];
-		}
 		var obj = Game.getObjectById(containerid);
 		if (Memory.lrcontainers[containerid] == null) {
-			var distance = shared.getMultiroomPathLength(obj.pos.x, obj.pos.y, obj.room.name, spawn.pos.x, spawn.pos.y, spawn.room.name);
-			console.log("distance is " + distance);
-			Memory.lrcontainers[containerid] = {
-				spawn: spawn.name, 
+			Memory.lrcontainers[containerid] = { 
 				room: obj.room.name, 
 				x: obj.pos.x, 
-				y: obj.pos.y,
-				distance: distance
+				y: obj.pos.y
 			};
 		}
 	},
-	updateContainers: function() {
-		for (var cname in Memory.lrcontainers) {
-			//console.log("cname " + cname);
-			var containerinfo = Memory.lrcontainers[cname]; 
-			var container = Game.getObjectById(cname);
-			//console.log("container : " +container);
-			if (container != null) {			
-				var lrhaulercarry = this.getConfigCarryCapacity(configs.lrhauler);
-				var roomclaimed = Game.rooms[container.room.name].controller.reservation != null; 
-				//console.log("roomclaimed " + roomclaimed + " lrhaulercarry " + lrhaulercarry + " container " + container);
-				if (roomclaimed) {
-					var sourcerate = 3000/300;
-				} else {
-					var sourcerate = 1500/300; 
-				}
-				//console.log("containerinfo.distance " + containerinfo.distance);
-				var haulrate = lrhaulercarry / (containerinfo.distance * 2);
-				var haulersneeded = Math.ceil(haulrate/sourcerate); 
-				console.log("container " + cname + " in " + container.room.name + " sourcerate " + sourcerate + " haulrate " + haulrate + " haulers needed " + haulersneeded);
-				Memory.lrcontainers[cname].haulersneeded = haulersneeded;
+	getLrMinerRoomTarget: function() {
+        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
+        var neededrooms = [];
+		for (var key in this.lrminingRooms) {
+			var needed = this.lrminingRooms[key]; 
+			var targeting = _.filter(lrm, (creep) => creep.memory.room == key); 
+			var targetingUnhealthy = _.filter(lrm, (creep) => creep.memory.room == key && creep.ticksToLive < 200);
+			if (((needed + targetingUnhealthy.length) - targeting.length) > 0) {
+				console.log("getLrMinerRoomTarget returning " + key);
+				return key;
 			}
 		}
+		console.log("getLrMinerRoomTarget returning nothing");
+		return;
 	},
-	getConfigCarryCapacity: function(config) {
-		var ret = 0; 
-		for (var i = 0; i < config.length; i++) {
-			if (config[i] == CARRY) {
-				ret += 50; 
+	lrMinerNeed: function() {
+		if (Memory.lrMinerNeed != null) {
+			if (Memory.lrMinerNeed.time == Game.time) {
+				return Memory.lrMinerNeed.needed; 
+			} else {
+				Memory.lrMinerNeed = null;
 			}
 		}
-		return ret;
-	},
-	getLrHaulerNeedForRoom: function(room) {
-		//console.log("returning need for room " + room);
-		return Memory.lrhaulerneed[room];
-	},
-	updateLrHaulerNeed: function() {
-		if (Memory.lrhaulerneed == null) {
-			Memory.lrhaulerneed = {};
-		}
-		for (var room in LRHAULERROOMS) {
-			var roomname = LRHAULERROOMS[room];
-			//Memory.lrhaulerneed[roomname] = this.getLrHaulerNeedForRoom(roomname); 
-			if (roomname == 'W17N67' || roomname == 'W18N66') {
-				Memory.lrhaulerneed[roomname] = 2;
-				return;
+        var lrm = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
+        var spawns = _.filter(Game.spawns, (spawn) => spawn.spawning != null && spawn.spawning.name.substring(0, 14) == 'longrangeminer');
+        //console.log("spawns spawning lrminers: " + spawns.length);
+        var neededrooms = [];
+		for (var key in this.lrminingRooms) {
+			var needed = this.lrminingRooms[key]; 
+			var targeting = _.filter(lrm, (creep) => creep.memory.room == key); 
+			var targetingUnhealthy = _.filter(lrm, (creep) => creep.memory.room == key && creep.ticksToLive < 200);
+			if (((needed + targetingUnhealthy.length) - targeting.length) > 0 && spawns.length < 1) {
+				neededrooms.push(key);
 			}
-			Memory.lrhaulerneed[roomname] = 1; //fix this
+			//console.log("lrMinerNeed: " + key + ", targeting: " + targeting.length + ", targetingUnhealthy: " + targetingUnhealthy.length + ", needed: " + needed);
+			//console.log("lrMinerNeed: reccomend spawning for room " + key + ": " + needed);
 		}
+		Memory.lrMinerNeed = { time: Game.time, needed: neededrooms };
+		return neededrooms; 
+	},
+	lrHaulerNeed: function() {
+		if (Memory.lrHaulerNeed != null) {
+			if (Memory.lrHaulerNeed.time == Game.time) {
+				return Memory.lrHaulerNeed.needed; 
+			} else {
+				Memory.lrHaulerNeed = null;
+			}
+		}
+        var lrHaulerNeed = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler');
+        var spawns = _.filter(Game.spawns, (spawn) => spawn.spawning != null && spawn.spawning.name.substring(0, 8) == 'lrhauler');
+        var neededrooms = [];
+		for (var key in this.lrminingRooms) {
+			var needed = this.lrminingRooms[key]; 
+			var targeting = _.filter(lrHaulerNeed, (creep) => creep.memory.room == key); 
+			var targetingUnhealthy = _.filter(lrHaulerNeed, (creep) => creep.memory.room == key && creep.ticksToLive < 200);
+			if (((needed + targetingUnhealthy.length) - targeting.length) > 0 && spawns.length < 1) {
+				neededrooms.push(key);
+			}
+			//console.log("lrMinerNeed: " + key + ", targeting: " + targeting.length + ", targetingUnhealthy: " + targetingUnhealthy.length + ", needed: " + needed);
+			//console.log("lrMinerNeed: reccomend spawning for room " + key + ": " + needed);
+		}
+		Memory.lrHaulerNeed = { time: Game.time, needed: neededrooms };
+		return neededrooms; 
+	},
+	getLrHaulerRoomTarget: function() {
+		var lrHaulerNeed = _.filter(Game.creeps, (creep) => creep.memory.role == 'lrhauler');
+        var neededrooms = [];
+		for (var key in this.lrminingRooms) {
+			var needed = this.lrminingRooms[key]; 
+			var targeting = _.filter(lrHaulerNeed, (creep) => creep.memory.room == key); 
+			var targetingUnhealthy = _.filter(lrHaulerNeed, (creep) => creep.memory.room == key && creep.ticksToLive < 200);
+			if (((needed + targetingUnhealthy.length) - targeting.length) > 0) {
+				console.log("getLrHaulerRoomTarget returning " + key);
+				return key;
+			}
+		}
+		//console.log("getLrHaulerRoomTarget returning nothing");
+		return;
 	}
-
 }
 
 module.exports = economyMonitor;

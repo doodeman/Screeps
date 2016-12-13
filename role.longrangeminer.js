@@ -1,20 +1,25 @@
-var ROOMS = ['W18N66', 'W19N67', 'W17N66', 'W17N67', 'W18N65', 'W19N68'];
-
-//var ROOMS = ['W18N66', 'W19N67', 'W19N68', 'W17N67', 'W18N65'];
+var ROOMS = ['W18N66', 'W17N67', 'W19N67'];
 var analyzer = require('enemyAnalyzer');
+var economyMonitor = require('economymonitor');
 
 var MAXROOMS = {
     'W18N66': 2,
     'W18N67': 0,
     'W19N67': 1, 
     'W17N66': 1,
-    'W19N68': 1,
+    'W19N68': 0,
     'W17N67': 2,
-    'W18N65': 1
+    'W18N65': 0,
+    'W17N65': 2
 }
 var shared = require('shared');
 
 var getRoomTarget = function(creep) {
+    var target= economyMonitor.getLrMinerRoomTarget();
+    creep.memory.room = target;
+    console.log("lrminer getRoom Target  " + creep.memory.target);
+    return target; 
+
     var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
     var targets = {}; 
     for (var i = 0; i < miners.length; i++) {
@@ -43,24 +48,62 @@ var getRoomTarget = function(creep) {
 }
 
 var findTarget = function(creep) {
-    var used = [];
+    /*
+    If any source is not taken by a miner, take that source
+    If no source is not taken, take source with least number of miners on it 
+    If two or more sources share lowest number of miners, take source occupied by miner with shortest remaining lifespan
+    */
+    var used = {};
     var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer');
     var sources = creep.room.find(FIND_SOURCES);
     for (var i =0; i < miners.length; i++) {
-        used.push(miners[i].memory.target);
+        var miner = miners[i]; 
+        if (miner.memory.target != null) {
+            if (used[miner.memory.target] != null) {
+                used[miner.memory.target] += 1; 
+            } else {
+                used[miner.memory.target] = 1; 
+            }
+        }
     }
+    
+    //If any source is not taken by a miner, take that source
     for (var i = 0; i < sources.length; i++) {
-        if (used.indexOf(sources[i].id) == -1) {
+        if (used[sources[i].id] == null) {
             creep.memory.state = 'mining'; 
             creep.memory.target = sources[i].id;
-            console.log("lrminer target set to " + sources[i].id + " in " + creep.room.name);
             return sources[i];
             return;
         }
     }
+    
+    
+    var minKey = _.min(Object.keys(used), function (o) { return used[o]; });
+    var minKeyValue = used[minKey];
+    var minKeys = [];
+    for (var key in used) {
+        if (used[key] == minKeyValue) {
+            minKeys.push(key);
+        }
+    }
+    
+    //If no source is not taken, take source with least number of miners on it 
+    if (minKeys.length == 1) {
+        creep.memory.state = 'mining'; 
+        creep.memory.target = sources[i].id;
+        return minKeys[0];
+    }
+    
+    //If two or more sources share lowest number of miners, take source occupied by miner with shortest remaining lifespan
+    var shortestTimeToLive = _.min(miners, function(miner) { return miner.ticksToLive; });
+    if (shortestTimeToLive != null) {
+        creep.memory.state = 'mining'; 
+        creep.memory.target = shortestTimeToLive.memory.target; 
+        return; 
+    }
+    
     creep.memory.state = 'mining'; 
     creep.memory.target = sources[0].id;
-    console.log("returning source in room " + sources[0].room.name + " for creep with target room " + creep.memory.room);
     return sources[0];
 }
 
@@ -72,7 +115,6 @@ var longrangeminer = {
             var room = Game.rooms[ROOMS[i]]; 
             if (room != null) {
                 var healthyHaulers = _.filter(Game.creeps, (creep) => creep.memory.role == 'longrangeminer' && creep.memory.room == room.name && creep.ticksToLive > 150 );
-                //console.log("healthyHauler " + healthyHaulers.length);
                 var neededForRoom =  MAXROOMS[room.name];
                 if (healthyHaulers.length < neededForRoom) {
                     needrooms.push(room.name); 
@@ -82,22 +124,16 @@ var longrangeminer = {
         return needrooms; 
     },
     run: function(creep) {
-
         var hostiles = creep.room.find(FIND_HOSTILE_CREEPS, {
             filter: function(object) {
                 return object.getActiveBodyparts(ATTACK) > 0;
             }
         });
-        var dropped = creep.room.find(FIND_DROPPED_RESOURCES);
-        var closestDrop = creep.pos.findClosestByRange(dropped);
-        if (creep.pos.getRangeTo(closestDrop) < 2) {
-            creep.pickup(closestDrop);
-        }
+        
         if (creep.memory.room == null || creep.memory.room == 'W19N66' || creep.memory.room == 'W18N67') {
             creep.memory.room = '';
         }
         if (hostiles.length) {
-            console.log("miner setting underattack = true in " + creep.room.name);
             analyzer.request(creep.room.name);
             creep.memory.underattack = true;
         } else {
@@ -181,6 +217,7 @@ var longrangeminer = {
             }
             else if(harvestResult !== 0) {
                 var moveresult = shared.moveByPath(creep, target);
+                console.log(creep.name + " moveresult " + moveresult);
                 if (moveresult === -11 || moveresult == -4 || moveresult == 0) {
                     //acceptable errors
                 }
@@ -203,28 +240,20 @@ var longrangeminer = {
                 creep.memory.state = 'idle';
                 return;
             }
-            var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
-            if (sites.length > 0) {
-                var target = creep.pos.findClosestByRange(sites);
-                if (target.pos.getRangeTo(creep.pos) < 5) {
-                    var buildres = creep.build(target); 
-                    if (buildres == ERR_NOT_IN_RANGE) {
-                        shared.moveByPath(creep, target);
-                        return;
-                    } else if (buildres === 0) {
-                        return;
-                    } else {
-                        creep.say('buerr' + buildres);
-                        return;
-                    }
-                }
+            
+            var targets = shared.getObjInRoomCriteria(
+                creep.room.name, 
+                'container', 
+                function(structure) { return structure.structureType == STRUCTURE_CONTAINER; }); 
+            if (targets.length == 0) {
+                targets = shared.getObjInRoomCriteria(
+                    creep.room.name, 
+                    'container', 
+                    function(structure) { return structure.structureType == STRUCTURE_STORAGE; }); 
             }
-            var targets = shared.getObjInRoomCriteria(creep.room.name, 'container', function(structure) { return structure.structureType == STRUCTURE_CONTAINER; }); 
             if(targets.length > 0) {
                 var target = creep.pos.findClosestByRange(targets);
-
                 if (target.store[RESOURCE_ENERGY] == target.storeCapacity) {
-                    console.log(creep.room.name + " here!!");
                     var oldTarget = target; 
                     targets = _.filter(targets, (structure) => structure.storeCapacity - structure.store[RESOURCE_ENERGY] > creep.carryCapacity);
                     if (targets.length == 0) {
@@ -242,6 +271,24 @@ var longrangeminer = {
                         shared.moveByPath(creep, target);
                     }
                     return;
+                }
+                if (target.store[RESOURCE_ENERGY] == target.storeCapacity) {
+                    var sites = shared.getObjInRoomCriteria(creep.room.name, 'constructionsites', function(structure) { return true; }, FIND_CONSTRUCTION_SITES, 10); 
+                    if (sites.length > 0) {
+                        var target = creep.pos.findClosestByRange(sites);
+                        if (target.pos.getRangeTo(creep.pos) < 30) {
+                            var buildres = creep.build(target); 
+                            if (buildres == ERR_NOT_IN_RANGE) {
+                                shared.moveByPath(creep, target);
+                                return;
+                            } else if (buildres === 0) {
+                                return;
+                            } else {
+                                creep.say('buerr' + buildres);
+                                return;
+                            }
+                        }
+                    }
                 }
                 var transferResult = creep.transfer(target, RESOURCE_ENERGY);
                 if(transferResult === -9) {

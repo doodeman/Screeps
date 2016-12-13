@@ -24,10 +24,17 @@ var roleHarvester = {
             }
         }
         if(creep.memory.state === 'full') {
+            var sites = shared.getObjInRoomCriteria(
+                creep.room.name, 
+                "constructionsites", 
+                function(structure) { return true; },
+                FIND_CONSTRUCTION_SITES,
+                10);
+            
             if (spawn.room.controller.ticksToDowngrade < 8000) {
                 creep.memory.state = 'upgrading'; 
             }
-            else if (creep.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+            else if (sites.length > 0) {
                 creep.memory.state = 'building';
             }
             else {
@@ -112,7 +119,12 @@ var roleHarvester = {
                 creep.memory.state = 'idle';
                 return;
             }
-            var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+            var sites = shared.getObjInRoomCriteria(
+                creep.room.name, 
+                "constructionsites", 
+                function(structure) { return true; },
+                FIND_CONSTRUCTION_SITES,
+                10);
             if (sites.length == 0) {
                 creep.memory.state = 'upgrading';
                 return;

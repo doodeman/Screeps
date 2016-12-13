@@ -57,16 +57,8 @@ var AVOID = ['W20N68', 'W16N66', 'W15N66']
  	getContainersInRoom(room) {
  		return shared.getObjInRoomCriteria(room, "container", function(structure) { return structure.structureType == STRUCTURE_CONTAINER; })
  	},
- 	getPath: function(x1, y1, x2, y2, room) {
-        var path = new RoomPosition(x1, y1, room).findPathTo(new RoomPosition(x2, y2, room), {ignoreRoads: true});
-        for (var i = 0; i < path.length; i++) {
-            Game.rooms[room].createConstructionSite(path[i].x, path[i].y, STRUCTURE_ROAD);
-        }
-	},
 	
 	findPath: function(creep,target) {
-		//console.log(creep.name + " in " + creep.room.name + " pathfinding");
-	    //console.log(creep.name + " finding path in " + creep.room.name);
 	    creep.say('pathfinding');
 	    PathFinder.use(false);
     	var path = creep.pos.findPathTo(target, { avoid: this.getRoomEdge(creep.room.name), maxOps: 500 });
@@ -87,13 +79,25 @@ var AVOID = ['W20N68', 'W16N66', 'W15N66']
 	    if (creep.memory.path.length == 0) {
 	    	this.moveIntoRoom(creep);
 	    	var path = shared.findPath(creep,target);
-	    	return;
+	    	if (path.length) {
+	    		return 0;
+	    	} else {
+	    		return -2; 
+	    	}
 	    }
 	    if (creep.pos.getRangeTo(target) > 1) {
 	        creep.room.lookAt(creep.memory.path[0].x, creep.memory.path[0].y).forEach(function(lookObject) {
     	        if (lookObject.type == LOOK_CREEPS) {
+    	        	if (lookObject.creep.memory.path != null && lookObject.creep.memory.path.length > 0) {
+    	        		if (lookObject.creep.memory.path[0].x == creep.pos.x && lookObject.creep.memory.path[0].y == creep.pos.y) {
+    	        			console.log(creep.name + "(" + creep.room.name + ", " + creep.pos.x + "." + creep.pos.y + ": creep " + lookObject.name + " wants to move where I am, finding new path");
+    	        		} else {
+    	        			console.log(creep.name + "(" + creep.room.name + ", " + creep.pos.x + "." + creep.pos.y + ": creep " + lookObject.name + " is in my way but will move away, waiting");
+    	        			return -11; 
+    	        		}
+    	        	}
     	            var path = shared.findPath(creep, target);
-    	            return;
+    	            return 0;
     	        }
     	    });
 	    }
@@ -303,9 +307,11 @@ var AVOID = ['W20N68', 'W16N66', 'W15N66']
 	},	
 
 	getExitToPointLength: function(x, y, room, exit) {
+		console.log("x: " + x + " y: " + y + " room: " + room + " exit: " + exit);
 	    var pos = new RoomPosition(x, y, room);
 	    var newExit = pos.findClosestByRange(exit);
 	    var path = pos.findPathTo(newExit); 
+	    console.log("path length " + path.length);
 		var retobj = { len: path.length, exitX: path[path.length-1].x, exitY: path[path.length-1].y };
 		//console.log("retobj: " + retobj.len + " exitX: " + retobj.exitX + " exitY: " + retobj.exitY);
 		return retobj;
@@ -335,13 +341,6 @@ var AVOID = ['W20N68', 'W16N66', 'W15N66']
 			case FIND_EXIT_TOP: 
 				return FIND_EXIT_BOTTOM;
 		}
-	},
-
-	getPathLength: function(x1, y1, x2, y2, room) {
-		PathFinder.use(false);
-    	var path = new RoomPosition(x1, y1, room).findPathTo(new RoomPosition(x2, y2, room), { avoid: this.getRoomEdge(creep), maxOps: 500 });
-    	PathFinder.use(true);
-    	return path.length; 
 	},
 
 	moveRandomDir: function (creep) {

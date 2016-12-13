@@ -43,7 +43,6 @@ var roleHealer = {
             }
         });
         if (hostiles.length) {
-            console.log("healer setting underattack = true in " + creep.room.name);
             creep.memory.underattack = true;
         } else {
             creep.memory.underattack = false;
@@ -87,7 +86,6 @@ var roleHealer = {
         if (creep.memory.state == 'attack') {
             if (hostiles.length == 0) {
                 if (creep.memory.priorityRoom != null && creep.memory.priorityRoom != '' && creep.room.name != creep.memory.priorityRoom) {
-                    console.log("Helping comrade!");
                     shared.moveBetweenRooms(creep, creep.memory.priorityRoom);
                     return;
                 }

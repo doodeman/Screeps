@@ -45,7 +45,7 @@ var enemyAnalyzer = {
     	
 		var report = this.reportForce(enemies, friendlies, room);
 		Memory.lastAnalyzed[room] = Game.time; 
-		console.log(report);
+		//console.log(report);
 		Game.notify(report);
     },
     getCreepReports: function(creeps) {

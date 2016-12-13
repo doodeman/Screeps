@@ -1,9 +1,16 @@
 var creepManager = {
 	run: function() {
-		if (Game.time%10 == 0) {
+		if (Memory.creepManager == null) {
+			Memory.creepManager = {}; 
+		}
+		if (Memory.creepManager.lastRan == null) {
+			Memory.creepManager.lastRan = Game.time; 
+		}
+		if (Game.time - Memory.creepManager.lastRan > 10) {
 			this.reportCreeps();
 			this.reportCreepsBySpawn();
 			this.reportLRMiners();
+			Memory.creepManager.lastRan = Game.time;
 		}
 	},
 	reportCreeps: function() {
@@ -82,50 +89,64 @@ var creepManager = {
 	creepRoles: {
 	    'lrhauler': {
 	        max: function() {
-	        	return 8;
+	        	return 6;
 	            var totalneed = 0; 
 	            for (var room in LRMINEROOMS[spawn.name]) {
 	                totalneed += economyMonitor.getLrHaulerNeedForRoom(LRMINEROOMS[spawn.name][room]);
 	            }
 	            return totalneed;
 	        },
-	        configuration: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]
+	        configuration: function() {
+	        	return [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE];
+	    	}
 	    },
 	    'healer': {
 	    	max:function() {
 	    		return 1; 
 	    	},
-	    	configuration: [HEAL, MOVE, HEAL, MOVE, HEAL, MOVE]
+	    	configuration: function() { 
+	    		return [HEAL, MOVE, HEAL, MOVE, HEAL, MOVE];
+	    	}
 	    },
 	    'warrior': {
 	        max: function() {
 	            return 1;
 	        },
-	        configuration: [TOUGH, ATTACK, MOVE, TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE]
+	        configuration: function() {
+	        	return [TOUGH, ATTACK, MOVE, TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE,TOUGH, ATTACK, MOVE];
+	        }
 	    },
 	    'longrangeminer': {
 	        max: function() {
-	            return 8;
+	            return 6;
 	        },
-	        configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
+	        configuration: function() {
+	        	return [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+	        }
 	    },
 	    'roamingworker': {
 	    	max: function() {
 	    		return 1; 
 	    	}, 
-	    	configuration: [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
+	    	configuration: function() {
+	    		return [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+	    	}
 	    },
 	    'targetedbuilder': {
 	    	max: function() {
-	    		return 1; 
+	    		return 0; 
 	    	}, 
-	    	configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE]
+	    	configuration: function() {
+	    		return [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE];
+	    	}
 	    },
 	    'explorer': {
 	    	max: function() {
-	    		return 2; 
+	    		return 0; 
 	    	}, 
-	    	configuration: [ATTACK, ATTACK, MOVE, MOVE]
+	    	configuration: function() {
+	    		return [ATTACK, ATTACK, MOVE, MOVE];
+	    	}
 	    }
 	}
 }

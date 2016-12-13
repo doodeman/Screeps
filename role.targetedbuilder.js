@@ -1,8 +1,11 @@
 
 var shared = require('shared');
-ROOM = 'W19N66';
+ROOM = 'W18N65';
 var roleTargetedBuilder = {
 	run: function(creep) {
+	    console.log("Targeted builder in room " + creep.room.name + " going to " + ROOM);
+	    shared.moveIntoRoom(creep);
+	    creep.memory.room = ROOM;
 		//creep.say('TARGETEDBUILDER');
     	var spawn = Game.spawns['Spawn1'];
 		if (creep.carry[RESOURCE_ENERGY] == 0) {
@@ -11,42 +14,36 @@ var roleTargetedBuilder = {
 				shared.fillCreepFromContainer(creep, refill);
 				
 				return;
-			}
-			if (creep.room.name != spawn.room.name) {
-				shared.moveBetweenRooms(creep, spawn.room.name);
-				
-				return; 
-			} else {
-				if (creep.carry[RESOURCE_ENERGY] < creep.carryCapacity) {
-					var target = shared.getNonEmptyStorage(creep);
-					if (target != null) {
-					    
-    					if (target.structureType == STRUCTURE_CONTAINER || target.structureType == STRUCTURE_STORAGE) {
-    		                var tranResult = target.transfer(creep, RESOURCE_ENERGY);
-    		            } else {
-    		                var tranResult = target.transferEnergy(creep); 
-    		            }
-    		            if (creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
-							
-    		                return;
-    		            }
-    		            if (tranResult === ERR_NOT_IN_RANGE) {
-    		                creep.moveTo(target);
-							
-    		                return; 
-    		            } else if (tranResult < 0) {
-    		                creep.say('berr' + tranResult);
-							
-    		                return; 
-		                }
-					}
+			} 
+			if (creep.carry[RESOURCE_ENERGY] < creep.carryCapacity) {
+			var target = shared.getNonEmptyStorage(creep);
+				if (target != null) {
+				    
+					if (target.structureType == STRUCTURE_CONTAINER || target.structureType == STRUCTURE_STORAGE) {
+		                var tranResult = target.transfer(creep, RESOURCE_ENERGY);
+		            } else {
+		                var tranResult = target.transferEnergy(creep); 
+		            }
+		            if (creep.carry[RESOURCE_ENERGY] == creep.carryCapacity) {
+						
+		                return;
+		            }
+		            if (tranResult === ERR_NOT_IN_RANGE) {
+		                creep.moveTo(target);
+						
+		                return; 
+		            } else if (tranResult < 0) {
+		                creep.say('berr' + tranResult);
+						
+		                return; 
+	                }
 				}
 			}
 		} else {
 			if (creep.room.name != ROOM) {
-				    shared.moveBetweenRooms(creep, ROOM);
-				    
-				    return;
+			    shared.moveBetweenRooms(creep, ROOM);
+			    
+			    return;
 			} else {
 				/*
 				var moveres = shared.moveByPath(creep, creep.room.controller);
@@ -61,7 +58,9 @@ var roleTargetedBuilder = {
                 }
                 return;
                 */
-                var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+
+	            var sites = shared.getObjInRoomCriteria(creep.room.name, 'constructionsites', function(structure) { return true; }, FIND_CONSTRUCTION_SITES, 10);
+	            
 	            if (sites.length > 0) {
 	            	var target = creep.pos.findClosestByRange(sites);
 	            	var buildres = creep.build(target); 
@@ -75,6 +74,11 @@ var roleTargetedBuilder = {
 		                return;
 		            }
 	            }
+	            if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+	            	var moveres = shared.moveByPath(creep, creep.room.controller);
+                    return;
+                }
+                
 
 	            var targets = shared.getObjInRoomCriteria(creep.room.name, 'structures', function(structure) { return true; });
 	            
@@ -103,29 +107,6 @@ var roleTargetedBuilder = {
                     creep.memory.state = 'filling';
                     return;
                 } 
-
-                /*
-		        var target = creep.pos.findClosestByRange(creep.room.find(FIND_STRUCTURES, {
-		            filter: function(structure) {
-		                if(((structure.structureType === STRUCTURE_EXTENSION) || (structure.structureType === STRUCTURE_SPAWN)) && structure.energyCapacity > structure.energy) {
-		                    return true; 
-		                }
-		            }
-		        }));
-		        if (target == null) {
-				    
-				    if (moveres == ERR_NO_PATH) {
-				    	creep.path = null; 
-				    	creep._move = null; 
-						var moveres = creep.moveTo(spawn);
-						
-				    }
-                    if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-		            	var moveres = shared.moveByPath(creep, creep.room.controller);
-                    }
-                    return;
-		        }
-		        */
 		        //var moveres = shared.moveByPath(creep, target); 
 		        var moveres = creep.moveTo(target, { reusePath: true });
 		        creep.transfer(target, RESOURCE_ENERGY);

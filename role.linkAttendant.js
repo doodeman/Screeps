@@ -14,8 +14,8 @@ var roleLinkAttendant = {
 			var x = 23;
 			var y = 16;
 		} else {
-			var x = 11;
-			var y = 19; 
+			var x = 13;
+			var y = 18; 
 		}
 		if (creep.pos.x != x || creep.pos.y != y) {
 			var moveres = creep.moveTo(x, y); 
@@ -24,8 +24,8 @@ var roleLinkAttendant = {
 			var linkid = '583d62762a4dc22a576046ce';
 			var storageid = '5837a270bff25a055c77dc84';
 		} else {
-			var linkid = '5847d9f80a4d3d50492ef25c';
-			var storageid = '58413e90a2a6ec7855ac86b8';
+			var linkid = '584e6e7331afb97531978ed0';
+			var storageid = '584df83febe843e55332596c';
 		}
 		var link = Game.getObjectById(linkid); 
 		var storage = Game.getObjectById(storageid);

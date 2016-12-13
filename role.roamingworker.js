@@ -1,4 +1,4 @@
-var ROOMS = ['W18N66', 'W17N66', 'W19N68', 'W17N67', 'W18N65', 'W19N67'];
+var ROOMS = ['W18N66', 'W17N66', 'W17N67', 'W19N67', 'W18N65'];
 var shared = require('shared');
 
 var findRoom = function(creep) {
@@ -34,9 +34,7 @@ var findRoom = function(creep) {
 		}
 	}
 	if (isdefault) {
-	    //console.log("it's default");
 	}
-	//console.log("returning " + mostneedname);
 	creep.memory.room = mostneedname; 
 	return mostneedname; 
 }

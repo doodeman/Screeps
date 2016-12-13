@@ -4,7 +4,12 @@ var shared = require('shared');
 var findTarget = function(creep) {
     var used = [];
     var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner');
-    var sources = creep.room.find(FIND_SOURCES);
+    var sources = shared.getObjInRoomCriteria(
+                creep.room.name, 
+                "sources", 
+                function(source) { return true; },
+                FIND_SOURCES,
+                100000);
     for (var i =0; i < miners.length; i++) {
         used.push(miners[i].memory.targetid);
     }
@@ -65,11 +70,24 @@ var roleMiner = {
         if(creep.memory.state == 'idle') {
             creep.memory.state = 'harvesting';
         }
+        if (_.sum(creep.carry) == 0) {
+            creep.memory.state = 'harvesting';
+        }
+        if (_.sum(creep.carry) == creep.carryCapacity) {
+            creep.memory.state = 'depositing';
+        }
         if(creep.memory.state === 'harvesting') {
             
             if (creep.carry.energy === creep.carryCapacity) {
                 creep.memory.state = 'full';
                 return;
+            }
+            var targets = creep.room.find(FIND_DROPPED_RESOURCES);
+            if(targets.length) {
+                var target = creep.pos.findClosestByRange(targets); 
+                if (creep.pos.getRangeTo(target) < 2) {
+                    creep.pickup(target);
+                }
             }
             var source = Game.getObjectById(creep.memory.targetid);
             if (source === null) {
@@ -124,7 +142,7 @@ var roleMiner = {
                 
                 return;
             }
-            var sites = creep.room.find(FIND_CONSTRUCTION_SITES);
+            var sites = shared.getObjInRoomCriteria(creep.room.name, 'constructionsites', function(structure) { return true; }, FIND_CONSTRUCTION_SITES, 10);
             if (sites.length > 0) {
                 var target = creep.pos.findClosestByRange(sites);
                 if (target.pos.getRangeTo(creep.pos) < 2) {
@@ -145,6 +163,11 @@ var roleMiner = {
            
             
             var targets = shared.getContainersInRoom(creep.room.name); 
+            targets = targets.concat(shared.getObjInRoomCriteria(
+                creep.room.name, 
+                'links', 
+                function(structure) { return structure.structureType == STRUCTURE_LINK; }));
+            targets = targets.concat(shared.getObjInRoomCriteria(creep.room.name, "storage", function(structure) { return structure.structureType == STRUCTURE_STORAGE; }));
             if(targets.length > 0) {
                 
                 var target = creep.pos.findClosestByRange(targets);

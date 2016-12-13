@@ -7,7 +7,6 @@ var roleMiner = require('role.miner');
 var roleHauler = require('role.hauler');
 var roleWarrior = require('role.warrior');
 var roleExtensionManager = require('role.extensionManager');
-var roleRepairer = require('role.repairer');
 var roleLongrangeminer = require('role.longrangeminer');
 var roleHealer = require('role.healer');
 var roleClaimer = require('role.claimer');
@@ -27,26 +26,49 @@ var UPGD_SPD = 1;
 
 var CLAIMROOMS = {
     'W18N67': ['W17N67', 'W19N67'],
-    'Spawn1': ['W18N66', 'W18N65']
+    'Spawn1': ['W18N66'],
+    'W18N65': []
 }
 
-var ROLENAMES = ['hauler', 'miner', 'harvester', 'repairer', 'claimer', 'linkattendant'];
+var ROLENAMES = ['hauler', 'miner', 'harvester', 'claimer', 'linkattendant', 'wallworker', 'spawn2spawnhauler'];
 var ROLES = {
     'hauler': {
         max: function(spawn) {
-            var ret = spawn.room.find(FIND_STRUCTURES, { 
-                filter: function(obj) { return obj.structureType == STRUCTURE_CONTAINER; }
-            }).length;
-            //console.log("max hauler for " + spawn.name + " " + ret);
-            return ret + 1;
+            switch (spawn.name) {
+                case 'W18N67': 
+                    return 1; 
+                case 'Spawn1': 
+                    return 1; 
+                case 'W18N65': 
+                    return 1; 
+            }
         },
-        configuration: [CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE]
+        configuration: function(spawn) {
+            switch (spawn.name) {
+                case 'W18N67': 
+                    return [CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+                case 'Spawn1': 
+                    return [CARRY,CARRY,CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE];
+                case 'W18N65': 
+                    return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE];            
+                }
+        }
     },
     'miner': {
         max: function(spawn) {
             return spawn.room.find(FIND_SOURCES).length;
         },
-        configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE]
+        configuration: function(spawn) {
+            
+            switch (spawn.name) {
+                case 'W18N67': 
+                    return [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE]; 
+                case 'Spawn1': 
+                    return [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE]; 
+                case 'W18N65': 
+                    return [WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE]; 
+            }
+        } 
     },
     'harvester': {
         max: function(spawn) {
@@ -54,7 +76,9 @@ var ROLES = {
                 case 'W18N67': 
                     return 3; 
                 case 'Spawn1': 
-                    return 4; 
+                    return 1; 
+                case 'W18N65': 
+                    return 2; 
             }
             return 3;
             var currHarvesterConfig = getCreepConfig(spawn, 'harvester');
@@ -63,25 +87,64 @@ var ROLES = {
             var energyPerTick = sourcescount * (3000/300);
             return Math.floor(energyPerTick/currUpgSpd)+3;
         },
-        configuration: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE]
-    },
-    'repairer': {
-        max: function(spawn) {
-            return 1; 
-        },
-        configuration: [CARRY, MOVE, WORK, CARRY, MOVE, WORK]
+        configuration: function(spawn) {switch (spawn.name) {
+                case 'W18N67': 
+                    return [WORK, WORK, WORK, WORK, WORK, WORK, WORK,  CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE]; 
+                case 'Spawn1': 
+                    return [WORK, WORK, WORK, WORK, WORK, WORK, WORK,  CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE]; 
+                case 'W18N65': 
+                    return [WORK, CARRY, MOVE, WORK, CARRY, MOVE, WORK, CARRY, MOVE, WORK, CARRY, MOVE]; 
+            }
+        }
     },
     'claimer': {
         max: function(spawn) {
             return 1; 
         }, 
-        configuration: [MOVE, CLAIM]
+        configuration: function(spawn) {
+            return [MOVE, CLAIM];
+        } 
     },
     'linkattendant': {
         max: function(spawn) {
-            return 1; 
+            switch (spawn.name) {
+                case 'W18N67': 
+                    return 1; 
+                case 'Spawn1': 
+                    return 1; 
+                case 'W18N65': 
+                    return 0;  
+            }
         }, 
-        configuration: [MOVE, CARRY, CARRY, CARRY]
+        configuration: function(spawn) {
+            return [MOVE, CARRY, CARRY, CARRY];
+        }
+    },
+    'wallworker': {
+        max: function(spawn) {
+            switch (spawn.name) {
+                case 'W18N67': 
+                    return 2; 
+                case 'Spawn1': 
+                    return 1; 
+                case 'W18N65': 
+                    return 0; 
+            }
+        },
+        configuration: function(spawn) {
+            return [WORK, WORK, WORK, CARRY, MOVE, WORK, CARRY, MOVE, WORK, CARRY, MOVE, WORK, CARRY, MOVE, CARRY];
+        }
+    },
+    'spawn2spawnhauler': {
+        max: function(spawn) {
+            if (spawn.room.name == 'W19N66') {
+                return 0;
+            } 
+            return 0;
+        },
+        configuration: function(spawn) {
+            return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE];
+        }
     }
 };
 
@@ -97,7 +160,11 @@ var COSTS = {
 }
 
 var updateSpawnCap = function(spawn) {
-    if (Memory[spawn.id].energycap == null || Game.time % 50 == 0) {
+    if (Memory.spawnCap == null || Memory.spawnCap.lastRan == null) {
+        Memory.spawnCap = {}; 
+        Memory.spawnCap.lastRan = Game.time; 
+    }
+    if (Memory[spawn.id].energycap == null || Game.time - Memory.spawnCap.lastRan < 100) {
         var extensions = spawn.room.find(FIND_MY_STRUCTURES, {
             filter: function(obj) { return obj.structureType == STRUCTURE_EXTENSION && obj.isActive(); }
         });
@@ -139,16 +206,16 @@ var getCreepUpgdSpeed = function(config) {
 }
 
 var getCreepConfig = function(spawn, role) {
-    return ROLES[role].configuration;
+    return ROLES[role].configuration(spawn);
     var config = []; 
     if (Memory[spawn.id].energycap == null) {
         updateSpawnCap(spawn); 
     }
     var partCost = getConfigCost(config); 
     var currentCost = 0; 
-    var partcost = getConfigCost(ROLES[role].configuration);
+    var partcost = getConfigCost(ROLES[role].configuration(spawn));
     while (getConfigCost(config) < Memory[spawn.id].energycap - partcost + 1) {
-        config = config.concat(ROLES[role].configuration); 
+        config = config.concat(ROLES[role].configuration(spawn)); 
     }
     
     return config; 
@@ -163,12 +230,12 @@ var getConfigCost = function(config) {
 }
 
 var updateCreeps = function(spawn, neededRole) {
+    if (spawn.spawning != null) {
+        //console.log(spawn.name + " spawning " + spawn.spawning.name.substring(0, 14));
+    }
+
     if (Memory[spawn.id] == null) {
         Memory[spawn.id] = {};
-    }
-    if (Memory[spawn.id].maximums == null || Game.time % 20 == 0) {
-        Memory[spawn.id].creeps = {};
-        updateMaximums(spawn);
     }
 
     var miners = _.filter(Game.creeps, (creep) => creep.memory.role == 'miner');
@@ -180,11 +247,13 @@ var updateCreeps = function(spawn, neededRole) {
     var minersmax = ROLES['miner'].max(spawn);
     var haulersmax = ROLES['hauler'].max(spawn);
 
-    var canSpawn = (miners.length == minersmax) && (haulers.length == haulersmax); 
+    //console.log(spawn.name + " miners length " + miners.length + " minersmax " + minersmax + " haulers length " + haulers.length + " haulersmax " + haulersmax);
+    var canSpawn = (miners.length >= minersmax) && (haulers.length >= haulersmax); 
     //console.log("miners length " + miners.length + " minersmax " + minersmax + " haulers length " + haulers.length + " haulersmax " + haulersmax + " canSpawn: " + canSpawn);
 
     var claimerNeeded = roleClaimer.claimerNeeded(CLAIMROOMS[spawn.name]);
     var statusstr = "Can spawn non-hauler&miner: " + canSpawn; 
+    var spawning = false;
     for (var i = 0; i < ROLENAMES.length; i++) {
         var rolename = ROLENAMES[i];
 
@@ -192,8 +261,6 @@ var updateCreeps = function(spawn, neededRole) {
         if (Memory[spawn.id].maximums[rolename] == null) {
             updateMaximums(spawn);
         }
-        var spawning = false; 
-        //console.log( spawn.name + "Max " + rolename + " " + Memory[spawn.id].maximums[rolename] + " " + creeps.length);
         statusstr = statusstr + ROLENAMES[i] + " " + creeps.length + ":" + Memory[spawn.id].maximums[rolename] + " "; 
         if (creeps.length < Memory[spawn.id].maximums[rolename] 
             || (rolename == 'hauler' && haulers.length == 1 && haulers[0].ticksToLive < 200) 
@@ -205,7 +272,6 @@ var updateCreeps = function(spawn, neededRole) {
                 if (rolename != 'claimer' && rolename != 'longrangeminer' && rolename != 'lrhauler') {
                     var newName = spawn.createCreep(config, rolename + Math.floor((Math.random()*100000) + 1), { role: rolename, originalRole: rolename, state: 'idle', room: spawn.room.name, spawn: spawn.name});
                 } else if (rolename == 'claimer') {
-                    console.log(spawn.room.name + " spawning claimer " + claimerNeeded);
                     var newName = spawn.createCreep(config, rolename + Math.floor((Math.random()*100000) + 1), 
                         { role: rolename, originalRole: rolename, state: 'idle', room: claimerNeeded, spawn: spawn.name}); 
                 }
@@ -218,17 +284,25 @@ var updateCreeps = function(spawn, neededRole) {
     }
     if (spawn.spawning != null) {
     }
-    if (!spawning && canSpawn && neededRole != null) {
+    //console.log(spawn.name + " spawning: " + spawning + " canSpawn " + canSpawn);
+    if (!spawning && canSpawn && neededRole != null && spawn.name != 'W18N65') {
         //if (neededRole == 'lrhauler') {
          //   var targetRoom = roleLrhauler.needLrHauler()[0]; 
         //}
-        //if (neededRole == 'longrangeminer') {
-        //    var targetRoom = roleLongrangeminer.needLrm()[0];
-        //} else {
-        //    var targetRoom = spawn.room.name; 
-        //}
+        var targetRoom = '';
+        if (neededRole == 'longrangeminer') {
+            var targetRoom = economyMonitor.lrMinerNeed()[0];
+        } 
+        if (neededRole == 'lrhauler') {
+            var targetRoom = economyMonitor.lrHaulerNeed()[0];
+        } 
+        if (targetRoom == '') {
+            var targetRoom = spawn.room.name; 
+        }
         var targetRoom = spawn.room.name; 
-        var newName = spawn.createCreep(creepManager.creepRoles[neededRole].configuration, neededRole + Math.floor((Math.random()*100000) + 1), { role: neededRole, originalRole: neededRole, state: 'idle', room: targetRoom, spawn: spawn.name});     
+        //console.log(spawn.name + " want to spawn " + neededRole);
+        var newName = spawn.createCreep(creepManager.creepRoles[neededRole].configuration(spawn), neededRole + Math.floor((Math.random()*100000) + 1), { role: neededRole, originalRole: neededRole, state: 'idle', room: targetRoom, spawn: spawn.name});     
+        //console.log("spawn result " + newName);
         return newName; 
     }
     return -1; 
